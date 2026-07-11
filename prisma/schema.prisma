@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Plan {
+  FREE
+  CREATOR
+  PRO
+}
+
+model User {
+  id               String          @id @default(cuid())
+  supabaseId       String          @unique
+  email            String          @unique
+  name             String?
+  niche            String?
+  plan             Plan            @default(FREE)
+  stripeCustomerId String?         @unique
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  analyses         Analysis[]
+  regenerations    Regeneration[]
+}
+
+model Analysis {
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videoUrl        String
+  videoTitle      String?
+  platform        String
+  tone            String
+  format          String
+  outputFormat    String         @default("Court")
+  language        String
+  niche           String?
+  viralScore      Int
+  whyViral        String
+  improvements    String
+  viralTags       String[]
+  hookStrength    Int
+  retentionScore  Int
+  ctaScore        Int
+  script          String
+  similarityScore Int?
+  createdAt       DateTime       @default(now())
+  regenerations   Regeneration[]
+
+  @@index([userId, createdAt])
+}
+
+model Regeneration {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysisId String
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
