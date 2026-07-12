@@ -115,7 +115,6 @@ export async function POST(request: NextRequest) {
     personalStyle,
     videoTitle: existing.videoTitle ?? undefined,
     analysisContext: JSON.stringify(analysisContext, null, 2),
-    variant: true,
   });
 
   const scriptCompletion = await openai.chat.completions.create({
