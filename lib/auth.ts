@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js"
 import { prisma } from "./prisma"
-import type { Plan } from "@prisma/client"
+type Plan = "FREE" | "CREATOR" | "PRO"
 
 export async function getAuthUser(request: Request) {
   try {
