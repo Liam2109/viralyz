@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
-import type { Plan } from "@prisma/client";
+type Plan = "FREE" | "CREATOR" | "PRO";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
