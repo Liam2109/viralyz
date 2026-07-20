@@ -132,7 +132,26 @@ function FreePlanBanner() {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm">Vous avez 2 crédits gratuits ce mois — passez au plan Creator pour en avoir 50</p>
-      <Link href="/#pricing" className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center">Upgrader</Link>
+      <button
+  type="button"
+  onClick={async () => {
+    const { data: { session } } = await getSupabase().auth.getSession();
+    if (!session) { window.location.href = "/login"; return; }
+    const res = await fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ plan: "creator" }),
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  }}
+  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
+>
+  Upgrader
+</button>
     </div>
   );
 }
@@ -390,7 +409,26 @@ export default function DashboardPage() {
           {quota && <CreditsBar quota={quota} />}
           {quota?.plan !== "FREE" && (
             <div className="flex justify-end">
-              <Link href="/#pricing" className="btn-animated rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white">Upgrade</Link>
+              <button
+  type="button"
+  onClick={async () => {
+    const { data: { session } } = await getSupabase().auth.getSession();
+    if (!session) { window.location.href = "/login"; return; }
+    const res = await fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ plan: "creator" }),
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  }}
+  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
+>
+  Upgrader
+</button>
             </div>
           )}
         </section>
