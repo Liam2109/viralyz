@@ -56,36 +56,42 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { plan } = await request.json();
+  try {
+    const { plan } = await request.json();
 
-  if (!plan || !PRICE_IDS[plan]) {
-    return NextResponse.json({ error: "Plan invalide." }, { status: 400 });
+    if (!plan || !PRICE_IDS[plan]) {
+      return NextResponse.json({ error: "Plan invalide." }, { status: 400 });
+    }
+
+    const supabaseUser = await getAuthUser(request);
+    if (!supabaseUser) {
+      return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+    }
+
+    const dbUser = await getOrCreateDbUser(supabaseUser);
+    if (!dbUser) {
+      return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
+    }
+
+    const origin = request.headers.get("origin") ?? "http://localhost:3000";
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: dbUser.stripeCustomerId ?? undefined,
+      customer_email: dbUser.stripeCustomerId ? undefined : dbUser.email,
+      line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
+      success_url: `${origin}/dashboard?upgraded=true`,
+      cancel_url: `${origin}/dashboard?cancelled=true`,
+      metadata: {
+        supabaseId: dbUser.supabaseId,
+        plan: PLAN_MAP[plan],
+      },
+    });
+
+    return NextResponse.json({ url: session.url });
+
+  } catch (error) {
+    console.error("STRIPE CHECKOUT ERROR:", error);
+    return NextResponse.json({ error: String(error) }, { status: 500 });
   }
-
-  const supabaseUser = await getAuthUser(request);
-  if (!supabaseUser) {
-    return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
-  }
-
-  const dbUser = await getOrCreateDbUser(supabaseUser);
-  if (!dbUser) {
-    return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
-  }
-
-  const origin = request.headers.get("origin") ?? "http://localhost:3000";
-
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer: dbUser.stripeCustomerId ?? undefined,
-    customer_email: dbUser.stripeCustomerId ? undefined : dbUser.email,
-    line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
-    success_url: `${origin}/dashboard?upgraded=true`,
-    cancel_url: `${origin}/dashboard?cancelled=true`,
-    metadata: {
-      supabaseId: dbUser.supabaseId,
-      plan: PLAN_MAP[plan],
-    },
-  });
-
-  return NextResponse.json({ url: session.url });
 }

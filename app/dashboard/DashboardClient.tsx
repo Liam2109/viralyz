@@ -145,8 +145,11 @@ function FreePlanBanner() {
       },
       body: JSON.stringify({ plan: "creator" }),
     });
-    const data = await res.json();
+   const text = await res.text();
+    if (!text) { alert("Erreur serveur vide"); return; }
+    const data = JSON.parse(text);
     if (data.url) window.location.href = data.url;
+    else alert(data.error ?? "Erreur inconnue");
   }}
   className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
 >
@@ -306,7 +309,9 @@ export default function DashboardPage() {
   const fetchHistory = useCallback(async (token: string) => {
     const res = await fetch("/api/analyze", { headers: { Authorization: `Bearer ${token}` } });
     if (res.ok) {
-      const data = await res.json();
+      const text = await res.text();
+if (!text) { alert("Erreur serveur vide"); return; }
+const data = JSON.parse(text);
       setHistory((data.history ?? []).map(enrichResult));
       setQuota(data.quota ?? null);
     }
@@ -482,7 +487,34 @@ export default function DashboardPage() {
               {isFreePlan && (
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-muted">TikTok, Instagram et X disponibles dès le plan Creator</p>
-                  <Link href="/#pricing" className="btn-animated shrink-0 rounded-lg gradient-premium px-4 py-1.5 text-xs font-semibold text-white text-center">Upgrader</Link>
+                  <button
+  type="button"
+  onClick={async () => {
+    const { data: { session } } = await getSupabase().auth.getSession();
+    if (!session) { window.location.href = "/login"; return; }
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ plan: "creator" }),
+      });
+      const text = await res.text();
+      if (!text) { alert("Erreur serveur vide"); return; }
+      const data = JSON.parse(text);
+      if (data.url) window.location.href = data.url;
+      else alert(data.error ?? "Erreur inconnue");
+    } catch (err) {
+      console.error("Stripe error:", err);
+      alert("Erreur lors de la redirection vers le paiement");
+    }
+  }}
+  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
+>
+  Upgrader
+</button>
                 </div>
               )}
             </div>
