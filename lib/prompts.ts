@@ -10,15 +10,16 @@ Analyse ce contenu vidéo et retourne UNIQUEMENT un JSON valide :
   "detectedNiche": string,
   "detectedTone": string,
   "detectedFormat": string,
-  "whyViral": string (100 mots minimum),
   "hookStrength": number (0-100),
   "retentionScore": number (0-100),
   "ctaScore": number (0-100),
   "viralTags": string[] (5 tags),
+  "whyViral": string (100 mots minimum),
   "weakPoints": string[] (3 points faibles),
-  "opportunities": string[] (3 opportunités)
+  "opportunities": string[] (3 opportunités),
+  "fullReport": string (rapport complet en markdown avec ces sections : ## Pourquoi cette vidéo performe\n## Points forts\n## Points faibles\n## Ce que tu dois retenir\n\nUtilise du gras, des bullet points, des emojis. Minimum 300 mots. Sois précis et actionnable.)
 }
-Si c'est une musique sans paroles créateur : viralScore 0 et explique.
+Si c'est une musique sans paroles créateur : viralScore 0 et explique dans fullReport.
 Sois honnête — ne gonfle pas les scores.
 `;
 
@@ -32,28 +33,24 @@ Analyse ce contenu vidéo et retourne UNIQUEMENT un JSON valide :
   "detectedNiche": string,
   "detectedTone": string,
   "detectedFormat": string,
-  "whyViral": string (200 mots minimum, analyse précise avec moments clés),
-  "hookAnalysis": string (analyse détaillée du hook),
-  "retentionAnalysis": string (où les viewers décrochent et pourquoi),
-  "ctaAnalysis": string (efficacité du CTA),
   "hookStrength": number (0-100),
+  "hookAnalysis": string,
   "retentionScore": number (0-100),
+  "retentionAnalysis": string,
   "ctaScore": number (0-100),
+  "ctaAnalysis": string,
   "viralTags": string[] (8 tags précis),
-  "weakPoints": string[] (5 points faibles très précis),
-  "opportunities": string[] (5 opportunités actionnables),
-  "narrativeStructure": {
-    "hook": string,
-    "development": string,
-    "climax": string,
-    "cta": string
-  },
-  "emotions": string[] (émotions déclenchées),
-  "algorithmTechniques": string[] (techniques algorithmiques détectées),
-  "alternativeHooks": string[] (5 hooks alternatifs prêts à utiliser),
-  "keyLearnings": string[] (5 leçons clés)
+  "whyViral": string (200 mots minimum),
+  "weakPoints": string[] (5 points faibles),
+  "opportunities": string[] (5 opportunités),
+  "narrativeStructure": { "hook": string, "development": string, "climax": string, "cta": string },
+  "emotions": string[],
+  "algorithmTechniques": string[],
+  "alternativeHooks": string[] (5 hooks),
+  "keyLearnings": string[] (5 leçons),
+  "fullReport": string (rapport complet en markdown avec ces sections : ## 🎯 Analyse virale\n## 🪝 Hook\n## 📈 Rétention\n## 💬 Call to Action\n## 💪 Points forts\n## ⚠️ Points faibles\n## 🚀 Opportunités\n## 🧠 Ce que tu dois retenir\n## 🎣 5 hooks alternatifs\n\nUtilise du gras, des bullet points, des emojis. Minimum 600 mots. Sois chirurgical et actionnable.)
 }
-Si c'est une musique sans paroles créateur : viralScore 0 et explique.
+Si c'est une musique sans paroles créateur : viralScore 0 et explique dans fullReport.
 Sois brutalement honnête — 85+ signifie vraiment exceptionnel.
 `;
 
@@ -67,33 +64,29 @@ Analyse ce contenu vidéo avec une précision chirurgicale et retourne UNIQUEMEN
   "detectedNiche": string,
   "detectedTone": string,
   "detectedFormat": string,
-  "whyViral": string (300 mots minimum, analyse ultra-précise),
-  "hookAnalysis": string (analyse détaillée seconde par seconde du hook),
-  "retentionAnalysis": string (courbe de rétention estimée),
-  "ctaAnalysis": string (analyse complète du CTA),
   "hookStrength": number (0-100),
+  "hookAnalysis": string,
   "retentionScore": number (0-100),
+  "retentionAnalysis": string,
   "ctaScore": number (0-100),
+  "ctaAnalysis": string,
   "editingScore": number (0-100),
   "thumbnailScore": number (0-100),
-  "viralTags": string[] (10 tags très précis),
-  "weakPoints": string[] (6 points faibles avec exemples),
-  "opportunities": string[] (6 opportunités avec actions concrètes),
-  "narrativeStructure": {
-    "hook": string,
-    "development": string,
-    "climax": string,
-    "cta": string
-  },
-  "emotions": string[] (toutes les émotions déclenchées),
-  "algorithmTechniques": string[] (toutes les techniques algorithmiques),
-  "alternativeHooks": string[] (10 hooks alternatifs),
-  "keyLearnings": string[] (5 leçons clés actionnables),
-  "shootingPlan": string (plan de tournage détaillé),
-  "promptToRecreate": string (prompt IA pour recréer une vidéo similaire),
-  "checkList": string[] (checklist des éléments à reprendre)
+  "viralTags": string[] (10 tags),
+  "whyViral": string (300 mots minimum),
+  "weakPoints": string[] (6 points faibles),
+  "opportunities": string[] (6 opportunités),
+  "narrativeStructure": { "hook": string, "development": string, "climax": string, "cta": string },
+  "emotions": string[],
+  "algorithmTechniques": string[],
+  "alternativeHooks": string[] (10 hooks),
+  "keyLearnings": string[] (5 leçons),
+  "shootingPlan": string,
+  "promptToRecreate": string,
+  "checkList": string[],
+  "fullReport": string (rapport complet en markdown avec ces sections : ## 🎯 Analyse virale complète\n## 🪝 Analyse du hook\n## 📈 Courbe de rétention\n## 💬 Analyse du CTA\n## 🎬 Montage et production\n## 💪 Points forts détaillés\n## ⚠️ Points faibles détaillés\n## 🚀 Opportunités concrètes\n## 🧠 Leçons clés\n## 🎣 10 hooks alternatifs\n## 🎬 Plan de tournage\n## ✅ Checklist\n\nUtilise du gras, des bullet points, des emojis. Minimum 1000 mots. Sois d'une précision chirurgicale.)
 }
-Si c'est une musique sans paroles créateur : viralScore 0 et explique.
+Si c'est une musique sans paroles créateur : viralScore 0 et explique dans fullReport.
 Sois d'une honnêteté absolue. Un score de 90+ est rarissime.
 `;
 
@@ -140,13 +133,11 @@ ${analysisContext}
 
 RÈGLES :
 1. Détecte la langue automatiquement et génère dans cette langue
-2. Identifie toi-même les grandes parties de la vidéo (hook, développement, climax, CTA) et structure le script en conséquence
+2. Identifie les grandes parties naturelles de la vidéo et structure le script en conséquence
 3. Hook fort qui arrête le scroll
 4. CTA naturel à la fin
 5. Immédiatement filmable
-
-Structure le script selon ce que tu détectes dans la vidéo — pas de timecodes imposés.
-Utilise des balises claires pour chaque partie que tu identifies.
+6. Utilise des balises claires pour chaque partie
 `;
 }
 
@@ -182,10 +173,8 @@ RÈGLES :
 3. Hook IRRÉSISTIBLE qui arrête le scroll
 4. Si style personnel fourni, imite fidèlement les expressions et le rythme
 5. Immédiatement filmable sans modification
-
-Structure le script selon ce que tu détectes — laisse l'analyse guider la structure.
-Utilise des balises claires pour chaque partie.
-Génère aussi 5 variantes du hook à la fin.
+6. Utilise des balises claires avec emojis pour chaque partie
+7. Génère 5 variantes du hook à la fin
 `;
 }
 
@@ -222,10 +211,7 @@ RÈGLES ABSOLUES :
 4. Notes de réalisation pour chaque partie (ton de voix, rythme, énergie)
 5. Si style personnel fourni, imite à la perfection
 6. Immédiatement filmable
-
-Structure le script selon ce que tu détectes dans la vidéo.
-Utilise des balises claires et des emojis pour chaque partie.
-Ajoute des notes de réalisation entre parenthèses.
-Génère aussi 10 variantes du hook, un plan de tournage et une checklist à la fin.
+7. Utilise des balises claires avec emojis et notes de réalisation
+8. Génère 10 variantes du hook, un plan de tournage et une checklist à la fin
 `;
 }
