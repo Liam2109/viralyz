@@ -85,7 +85,20 @@ export async function getQuotaInfo(userId: string, plan: Plan) {
   }
 }
 
-export async function fetchYouTubeTitle(videoUrl: string): Promise<string | null> {
+export interface YouTubeVideoData {
+  videoId: string
+  title: string
+  thumbnail: string
+  views: number
+  likes: number
+  comments: number
+  duration: string
+  publishedAt: string
+  channelName: string
+  description: string
+}
+
+export async function fetchYouTubeData(videoUrl: string): Promise<YouTubeVideoData | null> {
   const match = videoUrl.match(
     /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
   )
@@ -96,11 +109,45 @@ export async function fetchYouTubeTitle(videoUrl: string): Promise<string | null
   if (!apiKey) return null
 
   const res = await fetch(
-    `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`
+    `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&id=${videoId}&key=${apiKey}`
   )
 
   if (!res.ok) return null
 
   const data = await res.json()
-  return data.items?.[0]?.snippet?.title ?? null
+  const item = data.items?.[0]
+  if (!item) return null
+
+  const snippet = item.snippet
+  const stats = item.statistics
+  const details = item.contentDetails
+
+  // Convertir la durée ISO 8601 en format lisible
+  const duration = details?.duration ?? "PT0S"
+  const match2 = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+  const hours = parseInt(match2?.[1] ?? "0")
+  const minutes = parseInt(match2?.[2] ?? "0")
+  const seconds = parseInt(match2?.[3] ?? "0")
+  const durationStr = hours > 0
+    ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+    : `${minutes}:${String(seconds).padStart(2, "0")}`
+
+  return {
+    videoId,
+    title: snippet?.title ?? "Inconnu",
+    thumbnail: snippet?.thumbnails?.maxres?.url ?? snippet?.thumbnails?.high?.url ?? "",
+    views: parseInt(stats?.viewCount ?? "0"),
+    likes: parseInt(stats?.likeCount ?? "0"),
+    comments: parseInt(stats?.commentCount ?? "0"),
+    duration: durationStr,
+    publishedAt: snippet?.publishedAt ?? "",
+    channelName: snippet?.channelTitle ?? "Inconnu",
+    description: snippet?.description?.slice(0, 500) ?? "",
+  }
+}
+
+// Garde la compatibilité avec l'ancien code
+export async function fetchYouTubeTitle(videoUrl: string): Promise<string | null> {
+  const data = await fetchYouTubeData(videoUrl)
+  return data?.title ?? null
 }

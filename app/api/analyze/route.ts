@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { openai } from "@/lib/openai";
-import { PROMPT_ANALYZE, buildPromptScript, PROMPT_SIMILARITY, type OutputFormat } from "@/lib/prompts";
+import { PROMPT_ANALYZE, PROMPT_ANALYZE_CREATOR, PROMPT_ANALYZE_PRO, buildPromptScript, buildPromptScriptCreator, buildPromptScriptPro, PROMPT_SIMILARITY, type OutputFormat } from "@/lib/prompts";
 import { prisma } from "@/lib/prisma";
-import { getAuthUser, getOrCreateDbUser, getQuotaInfo, fetchYouTubeTitle, PLAN_LIMITS, getMonthlyUsage, CREDITS_EXHAUSTED_MESSAGE } from "@/lib/auth";
+import { getAuthUser, getOrCreateDbUser, getQuotaInfo, fetchYouTubeData, PLAN_LIMITS, getMonthlyUsage, CREDITS_EXHAUSTED_MESSAGE } from "@/lib/auth";
 import { isNonYouTubeUrl } from "@/lib/platforms";
 
 interface AnalyzeBody {
@@ -33,6 +33,12 @@ interface AnalyzeJson {
   narrativeStructure?: { hook: string; development: string; climax: string; cta: string };
   emotions?: string[];
   algorithmTechniques?: string[];
+  alternativeHooks?: string[];
+  keyLearnings?: string[];
+  detectedLanguage?: string;
+  detectedNiche?: string;
+  detectedTone?: string;
+  detectedFormat?: string;
 }
 
 async function computeSimilarityScore(script: string, personalStyle: string): Promise<number | null> {
@@ -101,19 +107,55 @@ export async function POST(request: NextRequest) {
       if (used >= limit) return NextResponse.json({ error: CREDITS_EXHAUSTED_MESSAGE }, { status: 403 });
     }
 
+    // Récupération des données YouTube complètes
+    let youtubeData = null;
     let videoTitle: string | null = null;
+    let videoThumbnail: string | null = null;
+    let videoViews: number | null = null;
+    let videoLikes: number | null = null;
+    let videoComments: number | null = null;
+    let videoDuration: string | null = null;
+    let videoChannel: string | null = null;
+
     if (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) {
-      videoTitle = await fetchYouTubeTitle(videoUrl);
+      youtubeData = await fetchYouTubeData(videoUrl);
+      if (youtubeData) {
+        videoTitle = youtubeData.title;
+        videoThumbnail = youtubeData.thumbnail;
+        videoViews = youtubeData.views;
+        videoLikes = youtubeData.likes;
+        videoComments = youtubeData.comments;
+        videoDuration = youtubeData.duration;
+        videoChannel = youtubeData.channelName;
+      }
     }
 
+    // Contexte enrichi pour l'analyse
+    const metricsContext = youtubeData ? `
+Métriques réelles de la vidéo :
+- Vues : ${videoViews?.toLocaleString("fr-FR") ?? "N/A"}
+- Likes : ${videoLikes?.toLocaleString("fr-FR") ?? "N/A"}
+- Commentaires : ${videoComments?.toLocaleString("fr-FR") ?? "N/A"}
+- Durée : ${videoDuration ?? "N/A"}
+- Chaîne : ${videoChannel ?? "N/A"}
+- Ratio engagement : ${videoViews && videoLikes ? ((videoLikes / videoViews) * 100).toFixed(2) + "%" : "N/A"}
+` : "";
+
     const contentInput = transcript
-      ? `Transcript:\n${transcript}\n\nTitre: ${videoTitle ?? "Inconnu"}`
-      : `URL vidéo: ${videoUrl}\nTitre: ${videoTitle ?? "Inconnu"}\nAnalyse la structure typique d'une vidéo virale de ce type.`;
+      ? `Transcript:\n${transcript}\n\nTitre: ${videoTitle ?? "Inconnu"}\n${metricsContext}`
+      : `URL vidéo: ${videoUrl}\nTitre: ${videoTitle ?? "Inconnu"}\n${metricsContext}\nAnalyse la structure typique d'une vidéo virale de ce type.`;
+
+    // Choisir le prompt selon le plan
+    const analyzePrompt = dbUser.plan === "PRO"
+      ? PROMPT_ANALYZE_PRO
+      : dbUser.plan === "CREATOR"
+      ? PROMPT_ANALYZE_CREATOR
+      : PROMPT_ANALYZE;
 
     const analyzeCompletion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
-        { role: "system", content: PROMPT_ANALYZE },
+        { role: "system", content: analyzePrompt },
         { role: "user", content: contentInput },
       ],
       temperature: 0.7,
@@ -127,8 +169,21 @@ export async function POST(request: NextRequest) {
     try { analysis = JSON.parse(analyzeRaw); }
     catch { return NextResponse.json({ error: "Réponse IA invalide." }, { status: 500 }); }
 
-    const scriptPrompt = buildPromptScript({
-      platform, tone, format, outputFormat, language, niche, personalStyle,
+    // Choisir le prompt de script selon le plan
+    const scriptBuilderFn = dbUser.plan === "PRO"
+      ? buildPromptScriptPro
+      : dbUser.plan === "CREATOR"
+      ? buildPromptScriptCreator
+      : buildPromptScript;
+
+    const scriptPrompt = scriptBuilderFn({
+      platform,
+      tone,
+      format,
+      outputFormat,
+      language,
+      niche,
+      personalStyle,
       videoTitle: videoTitle ?? undefined,
       analysisContext: JSON.stringify(analysis, null, 2),
     });
@@ -154,6 +209,19 @@ export async function POST(request: NextRequest) {
       narrativeStructure: analysis.narrativeStructure,
       emotions: analysis.emotions,
       algorithmTechniques: analysis.algorithmTechniques,
+      alternativeHooks: analysis.alternativeHooks,
+      keyLearnings: analysis.keyLearnings,
+      detectedLanguage: analysis.detectedLanguage,
+      detectedNiche: analysis.detectedNiche,
+      detectedTone: analysis.detectedTone,
+      detectedFormat: analysis.detectedFormat,
+      // Données YouTube
+      thumbnail: videoThumbnail,
+      views: videoViews,
+      likes: videoLikes,
+      comments: videoComments,
+      duration: videoDuration,
+      channel: videoChannel,
     };
 
     const saved = await prisma.analysis.create({

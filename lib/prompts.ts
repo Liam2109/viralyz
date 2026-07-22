@@ -1,69 +1,118 @@
 export type OutputFormat = "Court" | "Moyen" | "Long";
 
+// ==================== PROMPT FREE ====================
 export const PROMPT_ANALYZE = `
-Tu es un expert mondial en création de contenu viral et en psychologie des réseaux sociaux.
-
-Un créateur te soumet une vidéo YouTube. Tu dois l'analyser de façon chirurgicale et honnête.
-
-DÉTECTION AUTOMATIQUE — analyse et déduis toi-même :
-- La langue de la vidéo
-- La niche exacte (business, lifestyle, tech, finance, humour, etc.)
-- Le ton utilisé (authentique, inspirant, éducatif, humoristique, etc.)
-- Le format narratif (storytelling, liste, révélation, tutoriel, etc.)
-- La durée approximative
-- Le type de contenu (tuto, vlog, motivation, news, etc.)
-
-RÈGLES ABSOLUES :
-- Si la vidéo est une musique ou un clip sans contenu créateur : retourne viralScore: 0 et explique clairement que ce contenu n'est pas analysable
-- Sois brutalement honnête dans tes notes — ne gonfle jamais les scores
-- Un score de 85+ signifie que la vidéo a réellement des caractéristiques virales exceptionnelles
-- Un score de 50-70 est une vidéo moyenne avec du potentiel
-- Un score sous 40 signifie que la vidéo a des problèmes sérieux
-
-Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
+Tu es un expert en marketing viral.
+Analyse ce contenu vidéo et retourne UNIQUEMENT un JSON valide :
 {
-  "viralScore": number (0-100, HONNÊTE),
-  "detectedLanguage": string (langue détectée),
-  "detectedNiche": string (niche détectée),
-  "detectedTone": string (ton détecté),
-  "detectedFormat": string (format narratif détecté),
-  "whyViral": string (minimum 200 mots — analyse précise et détaillée pourquoi cette vidéo performe ou non, cite des moments précis),
-  "hookAnalysis": string (analyse détaillée du hook : est-il fort ? pourquoi ? que ressent le viewer dans les 3 premières secondes ?),
-  "retentionAnalysis": string (où les viewers décrochent-ils ? pourquoi ? moments clés de rétention),
-  "ctaAnalysis": string (le CTA est-il efficace ? naturel ? au bon moment ?),
-  "viralTags": string[] (6-10 tags précis décrivant les techniques virales utilisées),
+  "viralScore": number (0-100, honnête),
+  "detectedLanguage": string,
+  "detectedNiche": string,
+  "detectedTone": string,
+  "detectedFormat": string,
+  "whyViral": string (100 mots minimum),
   "hookStrength": number (0-100),
   "retentionScore": number (0-100),
   "ctaScore": number (0-100),
-  "weakPoints": string[] (4-6 points faibles très précis avec exemples),
-  "opportunities": string[] (4-6 opportunités d'amélioration concrètes et actionnables),
-  "narrativeStructure": {
-    "hook": string (description précise du hook),
-    "development": string (comment se développe le contenu),
-    "climax": string (moment de tension ou révélation),
-    "cta": string (appel à l'action)
-  },
-  "emotions": string[] (émotions précises déclenchées chez le viewer),
-  "algorithmTechniques": string[] (techniques algorithmiques détectées : pattern interrupt, open loop, social proof, etc.),
-  "alternativeHooks": string[] (5 hooks alternatifs prêts à utiliser dans la même niche),
-  "keyLearnings": string[] (3-5 leçons clés à retenir de cette vidéo)
+  "viralTags": string[] (5 tags),
+  "weakPoints": string[] (3 points faibles),
+  "opportunities": string[] (3 opportunités)
 }
+Si c'est une musique sans paroles créateur : viralScore 0 et explique.
+Sois honnête — ne gonfle pas les scores.
 `;
 
+// ==================== PROMPT CREATOR ====================
+export const PROMPT_ANALYZE_CREATOR = `
+Tu es un expert mondial en création de contenu viral et psychologie des réseaux sociaux.
+Analyse ce contenu vidéo et retourne UNIQUEMENT un JSON valide :
+{
+  "viralScore": number (0-100, brutalement honnête),
+  "detectedLanguage": string,
+  "detectedNiche": string,
+  "detectedTone": string,
+  "detectedFormat": string,
+  "whyViral": string (200 mots minimum, analyse précise avec moments clés),
+  "hookAnalysis": string (analyse détaillée du hook),
+  "retentionAnalysis": string (où les viewers décrochent et pourquoi),
+  "ctaAnalysis": string (efficacité du CTA),
+  "hookStrength": number (0-100),
+  "retentionScore": number (0-100),
+  "ctaScore": number (0-100),
+  "viralTags": string[] (8 tags précis),
+  "weakPoints": string[] (5 points faibles très précis),
+  "opportunities": string[] (5 opportunités actionnables),
+  "narrativeStructure": {
+    "hook": string,
+    "development": string,
+    "climax": string,
+    "cta": string
+  },
+  "emotions": string[] (émotions déclenchées),
+  "algorithmTechniques": string[] (techniques algorithmiques détectées),
+  "alternativeHooks": string[] (5 hooks alternatifs prêts à utiliser),
+  "keyLearnings": string[] (5 leçons clés)
+}
+Si c'est une musique sans paroles créateur : viralScore 0 et explique.
+Sois brutalement honnête — 85+ signifie vraiment exceptionnel.
+`;
+
+// ==================== PROMPT PRO ====================
+export const PROMPT_ANALYZE_PRO = `
+Tu es le meilleur analyste de contenu viral au monde.
+Analyse ce contenu vidéo avec une précision chirurgicale et retourne UNIQUEMENT un JSON valide :
+{
+  "viralScore": number (0-100, brutalement honnête),
+  "detectedLanguage": string,
+  "detectedNiche": string,
+  "detectedTone": string,
+  "detectedFormat": string,
+  "whyViral": string (300 mots minimum, analyse ultra-précise),
+  "hookAnalysis": string (analyse détaillée seconde par seconde du hook),
+  "retentionAnalysis": string (courbe de rétention estimée),
+  "ctaAnalysis": string (analyse complète du CTA),
+  "hookStrength": number (0-100),
+  "retentionScore": number (0-100),
+  "ctaScore": number (0-100),
+  "editingScore": number (0-100),
+  "thumbnailScore": number (0-100),
+  "viralTags": string[] (10 tags très précis),
+  "weakPoints": string[] (6 points faibles avec exemples),
+  "opportunities": string[] (6 opportunités avec actions concrètes),
+  "narrativeStructure": {
+    "hook": string,
+    "development": string,
+    "climax": string,
+    "cta": string
+  },
+  "emotions": string[] (toutes les émotions déclenchées),
+  "algorithmTechniques": string[] (toutes les techniques algorithmiques),
+  "alternativeHooks": string[] (10 hooks alternatifs),
+  "keyLearnings": string[] (5 leçons clés actionnables),
+  "shootingPlan": string (plan de tournage détaillé),
+  "promptToRecreate": string (prompt IA pour recréer une vidéo similaire),
+  "checkList": string[] (checklist des éléments à reprendre)
+}
+Si c'est une musique sans paroles créateur : viralScore 0 et explique.
+Sois d'une honnêteté absolue. Un score de 90+ est rarissime.
+`;
+
+// ==================== SIMILARITY ====================
 export function PROMPT_SIMILARITY(script: string, personalStyle: string): string {
   return `
 Tu es un expert en analyse stylistique.
-Compare ce script généré avec les exemples de style personnel fournis.
+Compare ce script avec le style personnel fourni.
 Retourne UNIQUEMENT un JSON : { "similarityScore": number (0-100) }
 
 Script généré :
 ${script}
 
-Style personnel de référence :
+Style personnel :
 ${personalStyle}
 `;
 }
 
+// ==================== SCRIPT FREE ====================
 export function buildPromptScript({
   analysisContext,
   personalStyle,
@@ -80,42 +129,103 @@ export function buildPromptScript({
   analysisContext: string;
 }): string {
   return `
-Tu es un expert en création de contenu viral. Tu vas générer UN SEUL script parfait.
+Tu es un expert en création de contenu viral.
+Génère UN script basé sur cette analyse.
 
-Contexte de l'analyse :
+Titre de la vidéo : ${videoTitle ?? "Inconnu"}
+${personalStyle ? `Style personnel : ${personalStyle}` : ""}
+
+Analyse :
 ${analysisContext}
 
-Titre de la vidéo analysée : ${videoTitle ?? "Non disponible"}
-${personalStyle ? `Style personnel de l'auteur (IMITE CE STYLE) : ${personalStyle}` : ""}
+RÈGLES :
+1. Détecte la langue automatiquement et génère dans cette langue
+2. Identifie toi-même les grandes parties de la vidéo (hook, développement, climax, CTA) et structure le script en conséquence
+3. Hook fort qui arrête le scroll
+4. CTA naturel à la fin
+5. Immédiatement filmable
 
-RÈGLES DU SCRIPT :
-1. Détecte automatiquement la langue de la vidéo et génère le script dans cette langue
-2. Adapte le format et le ton à ce qui a le mieux marché dans la vidéo analysée
-3. Hook IRRÉSISTIBLE dans les 3 premières secondes — c'est la priorité absolue
-4. Structure en 3 actes avec tension croissante
-5. CTA fort, naturel, au bon moment
-6. Si un style personnel est fourni, imite-le fidèlement — expressions, rythme, niveau de langage
-7. Le script doit être immédiatement filmable sans aucune modification
-8. Inclus des timecodes approximatifs
-9. Génère aussi 3 variantes du hook à la fin
+Structure le script selon ce que tu détectes dans la vidéo — pas de timecodes imposés.
+Utilise des balises claires pour chaque partie que tu identifies.
+`;
+}
 
-Format obligatoire :
+// ==================== SCRIPT CREATOR ====================
+export function buildPromptScriptCreator({
+  analysisContext,
+  personalStyle,
+  videoTitle,
+}: {
+  platform?: string;
+  tone?: string;
+  format?: string;
+  outputFormat?: OutputFormat;
+  language?: string;
+  niche?: string;
+  personalStyle?: string;
+  videoTitle?: string;
+  analysisContext: string;
+}): string {
+  return `
+Tu es un expert en création de contenu viral.
+Génère un script complet et optimisé.
 
-[Hook — 0:00]
-(texte du hook — doit être percutant en moins de 3 secondes)
+Titre de la vidéo analysée : ${videoTitle ?? "Inconnu"}
+${personalStyle ? `Style personnel (IMITE CE STYLE FIDÈLEMENT) : ${personalStyle}` : ""}
 
-[Acte 1 — 0:05]
-(développement — crée de la curiosité)
+Analyse complète :
+${analysisContext}
 
-[Acte 2 — 0:25]
-(montée en tension — preuve, histoire, révélation)
+RÈGLES :
+1. Détecte la langue automatiquement et génère dans cette langue
+2. Identifie les grandes parties naturelles de la vidéo et structure le script selon ces parties
+3. Hook IRRÉSISTIBLE qui arrête le scroll
+4. Si style personnel fourni, imite fidèlement les expressions et le rythme
+5. Immédiatement filmable sans modification
 
-[CTA — 0:45]
-(appel à l'action naturel et fort)
+Structure le script selon ce que tu détectes — laisse l'analyse guider la structure.
+Utilise des balises claires pour chaque partie.
+Génère aussi 5 variantes du hook à la fin.
+`;
+}
 
----
-VARIANTES DU HOOK :
-Hook 2 : (alternative)
-Hook 3 : (alternative)
+// ==================== SCRIPT PRO ====================
+export function buildPromptScriptPro({
+  analysisContext,
+  personalStyle,
+  videoTitle,
+}: {
+  platform?: string;
+  tone?: string;
+  format?: string;
+  outputFormat?: OutputFormat;
+  language?: string;
+  niche?: string;
+  personalStyle?: string;
+  videoTitle?: string;
+  analysisContext: string;
+}): string {
+  return `
+Tu es le meilleur ghostwriter de contenu viral au monde.
+Génère un script parfait et ultra-détaillé.
+
+Titre de la vidéo analysée : ${videoTitle ?? "Inconnu"}
+${personalStyle ? `Style personnel (IMITE CE STYLE À LA PERFECTION) : ${personalStyle}` : ""}
+
+Analyse ultra-détaillée :
+${analysisContext}
+
+RÈGLES ABSOLUES :
+1. Détecte la langue automatiquement et génère dans cette langue
+2. Identifie les grandes parties naturelles de la vidéo selon son format et sa structure
+3. Hook qui arrête le scroll en moins de 2 secondes
+4. Notes de réalisation pour chaque partie (ton de voix, rythme, énergie)
+5. Si style personnel fourni, imite à la perfection
+6. Immédiatement filmable
+
+Structure le script selon ce que tu détectes dans la vidéo.
+Utilise des balises claires et des emojis pour chaque partie.
+Ajoute des notes de réalisation entre parenthèses.
+Génère aussi 10 variantes du hook, un plan de tournage et une checklist à la fin.
 `;
 }
