@@ -158,7 +158,7 @@ Métriques réelles de la vidéo :
         { role: "system", content: analyzePrompt },
         { role: "user", content: contentInput },
       ],
-      temperature: 0.7,
+      temperature: 0.2,
       response_format: { type: "json_object" },
     });
 
