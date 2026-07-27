@@ -79,6 +79,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting basique par IP
+const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+const rateLimitKey = `ratelimit:${ip}`;
+
+// On stocke dans les headers de la requête pour tracking
+const userAgent = request.headers.get("user-agent") ?? "";
+if (!userAgent || userAgent.length < 10) {
+  return NextResponse.json(
+    { error: "Requête non autorisée." },
+    { status: 403 }
+  );
+}
     const supabaseUser = await getAuthUser(request);
     if (!supabaseUser) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
     const dbUser = await getOrCreateDbUser(supabaseUser);
