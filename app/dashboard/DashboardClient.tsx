@@ -3,11 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
 import { getSupabase } from "@/lib/supabase";
 import { PlatformIconSingle } from "@/components/PlatformIcons";
-import { detectPlatformFromUrl, isNonYouTubeUrl } from "@/lib/platforms";
+import {
+  detectPlatformFromUrl,
+  isNonYouTubeUrl,
+  PLATFORM_LABELS,
+} from "@/lib/platforms";
 
+const ALL_PLATFORMS = ["TikTok", "YouTube Shorts", "Instagram Reels", "X"] as const;
+const FREE_PLATFORMS = ["YouTube Shorts"] as const;
 const TONES = ["Authentique", "Inspirant", "Éducatif", "Humoristique", "Autoritaire", "Intime"] as const;
 const FORMATS = ["Storytelling", "Liste", "Révélation", "Défi", "Tutoriel", "Avant/Après"] as const;
 const OUTPUT_FORMATS = [
@@ -16,24 +21,6 @@ const OUTPUT_FORMATS = [
   { value: "Long", label: "Long (5-10 min)", desc: "YouTube approfondi" },
 ] as const;
 const LANGUAGES = ["FR Casual", "FR Pro", "EN Casual", "EN Pro"] as const;
-
-const LOADING_MESSAGES = [
-  "🔍 Récupération des données YouTube...",
-  "🪝 Analyse du hook...",
-  "📊 Détection des techniques virales...",
-  "🎯 Calcul du score viral...",
-  "✍️ Génération du script...",
-  "✨ Finalisation...",
-] as const;
-
-const SCRIPT_SECTION_COLORS = [
-  "border-accent/40 bg-accent/10",
-  "border-secondary/40 bg-secondary/10",
-  "border-green-500/40 bg-green-500/10",
-  "border-orange-500/40 bg-orange-500/10",
-  "border-pink-500/40 bg-pink-500/10",
-  "border-cyan-500/40 bg-cyan-500/10",
-];
 
 interface AnalysisDetails {
   hookExplanation?: string;
@@ -44,19 +31,6 @@ interface AnalysisDetails {
   narrativeStructure?: { hook: string; development: string; climax: string; cta: string };
   emotions?: string[];
   algorithmTechniques?: string[];
-  alternativeHooks?: string[];
-  keyLearnings?: string[];
-  fullReport?: string;
-  detectedLanguage?: string;
-  detectedNiche?: string;
-  detectedTone?: string;
-  detectedFormat?: string;
-  thumbnail?: string;
-  views?: number;
-  likes?: number;
-  comments?: number;
-  duration?: string;
-  channel?: string;
 }
 
 interface AnalysisResult {
@@ -87,67 +61,20 @@ function parseAnalysisDetails(improvements: string): AnalysisDetails | null {
   try {
     const parsed = JSON.parse(improvements);
     if (typeof parsed === "object" && parsed !== null) return parsed;
-  } catch {
-    /* legacy plain text */
-  }
+  } catch { }
   return null;
 }
 
-function enrichResult(item: AnalysisResult): AnalysisResult {
-  return { ...item, details: parseAnalysisDetails(item.improvements) ?? undefined };
-}
-
-function getScoreBarColor(score: number): string {
+function getScoreColor(score: number): string {
   if (score < 40) return "bg-red-500";
   if (score <= 70) return "bg-orange-500";
   return "bg-green-500";
 }
 
-function getScoreHexColor(score: number): string {
-  if (score > 70) return "#22c55e";
-  if (score >= 40) return "#f97316";
-  return "#ef4444";
-}
-
-function getCreditsBarColor(pct: number): string {
-  if (pct > 50) return "bg-green-500";
-  if (pct >= 20) return "bg-orange-500";
-  return "bg-red-500";
-}
-
-function formatNumber(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
-  return n.toLocaleString("fr-FR");
-}
-
-function formatRelativeDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return "À l'instant";
-  if (diffMins < 60) return `Il y a ${diffMins} min`;
-  if (diffHours < 24) return `Il y a ${diffHours}h`;
-  if (diffDays < 7) return `Il y a ${diffDays}j`;
-  return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
-}
-
-function parseScriptSections(script: string): { title: string; content: string }[] {
-  const regex = /(\[[^\]]+\])/g;
-  const parts = script.split(regex).filter(Boolean);
-  const sections: { title: string; content: string }[] = [];
-  for (let i = 0; i < parts.length; i++) {
-    if (parts[i].startsWith("[")) {
-      sections.push({ title: parts[i], content: (parts[i + 1] ?? "").trim() });
-      i++;
-    }
-  }
-  if (sections.length === 0) return [{ title: "Script complet", content: script }];
-  return sections;
+function getSimilarityBadgeColor(score: number): string {
+  if (score > 70) return "border-green-500/40 bg-green-500/10 text-green-400";
+  if (score >= 40) return "border-orange-500/40 bg-orange-500/10 text-orange-400";
+  return "border-red-500/40 bg-red-500/10 text-red-400";
 }
 
 function RefreshIcon({ className }: { className?: string }) {
@@ -155,281 +82,6 @@ function RefreshIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
     </svg>
-  );
-}
-
-function Toast({ message }: { message: string | null }) {
-  if (!message) return null;
-  return (
-    <div className="toast-notification fixed bottom-6 right-6 z-50 rounded-xl border border-accent/40 bg-surface px-4 py-3 text-sm font-medium text-foreground shadow-lg shadow-accent/20">
-      {message}
-    </div>
-  );
-}
-
-function LoadingAnimation() {
-  const [msgIndex, setMsgIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const start = performance.now();
-    const duration = 45000;
-    let frame: number;
-    function tick(now: number) {
-      const elapsed = now - start;
-      setProgress(Math.min(95, (elapsed / duration) * 95));
-      if (elapsed < duration) frame = requestAnimationFrame(tick);
-    }
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
-  return (
-    <div className="rounded-2xl border border-border bg-surface p-10 text-center">
-      <div className="mx-auto mb-6 h-14 w-14 animate-spin rounded-full border-4 border-border border-t-accent" />
-      <p className="text-base font-medium transition-opacity duration-300">{LOADING_MESSAGES[msgIndex]}</p>
-      <div className="mx-auto mt-8 h-2 max-w-md overflow-hidden rounded-full bg-border">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-accent to-secondary transition-all duration-100 ease-linear"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-      <p className="mt-2 text-xs text-muted">{Math.round(progress)}%</p>
-    </div>
-  );
-}
-
-function AnimatedScore({ value, duration = 1500 }: { value: number; duration?: number }) {
-  const [display, setDisplay] = useState(0);
-  useEffect(() => {
-    let frame: number;
-    const start = performance.now();
-    function animate(now: number) {
-      const t = Math.min((now - start) / duration, 1);
-      const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-      setDisplay(Math.round(value * eased));
-      if (t < 1) frame = requestAnimationFrame(animate);
-    }
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [value, duration]);
-  return <>{display}</>;
-}
-
-function ViralScoreCircle({ score }: { score: number }) {
-  const radius = 54;
-  const circumference = 2 * Math.PI * radius;
-  const targetOffset = circumference - (score / 100) * circumference;
-  const color = getScoreHexColor(score);
-  const [offset, setOffset] = useState(circumference);
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setOffset(targetOffset));
-    return () => cancelAnimationFrame(frame);
-  }, [targetOffset]);
-
-  return (
-    <div className="relative mx-auto h-36 w-36">
-      <svg className="h-full w-full -rotate-90" viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r={radius} fill="none" stroke="#1E1E2E" strokeWidth="8" />
-        <circle
-          cx="60"
-          cy="60"
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth="8"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          className="score-circle-progress"
-          style={{ strokeDashoffset: offset }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-4xl font-bold" style={{ color }}>
-          <AnimatedScore value={score} />
-        </span>
-        <span className="text-sm text-muted">/100</span>
-      </div>
-    </div>
-  );
-}
-
-function ScoreBar({ label, score, explanation }: { label: string; score: number; explanation?: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-background p-4">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-semibold">{label}</span>
-        <span className="font-bold" style={{ color: getScoreHexColor(score) }}>
-          {score}/100
-        </span>
-      </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-border">
-        <div
-          className={`progress-bar-animated h-full rounded-full ${getScoreBarColor(score)}`}
-          style={{ width: `${score}%` }}
-        />
-      </div>
-      {explanation && <p className="mt-2 text-xs leading-relaxed text-muted">{explanation}</p>}
-    </div>
-  );
-}
-
-function CreditsSection({ quota }: { quota: QuotaInfo }) {
-  const plan = quota.plan.toUpperCase();
-  const remaining = quota.remaining ?? 0;
-  const pct = quota.limit && quota.limit > 0 ? (remaining / quota.limit) * 100 : 100;
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-border bg-surface p-5">
-        {quota.limit === null ? (
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">
-              Crédits illimités — Plan <span className="text-accent-light">{plan}</span>
-            </p>
-            <span className="rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-semibold text-accent-light">
-              Plan Pro ✨
-            </span>
-          </div>
-        ) : (
-          <>
-            <p className="text-sm font-medium">
-              {remaining} crédit{remaining !== 1 ? "s" : ""} restant{remaining !== 1 ? "s" : ""} — Plan{" "}
-              <span className="text-accent-light">{plan}</span>
-            </p>
-            <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-border">
-              <div
-                className={`progress-bar-animated h-full rounded-full transition-all duration-500 ${getCreditsBarColor(pct)}`}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-            {remaining === 0 && (
-              <p className="mt-3 text-xs text-red-400">Vous avez utilisé tous vos crédits ce mois.</p>
-            )}
-          </>
-        )}
-      </div>
-
-      {plan === "FREE" && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm">Passez au Creator — 20 analyses/mois — 14.99€</p>
-          <Link
-            href="/dashboard/pricing"
-            className="btn-animated w-full rounded-lg gradient-premium px-5 py-2.5 text-center text-sm font-semibold text-white sm:w-auto"
-          >
-            Upgrader
-          </Link>
-        </div>
-      )}
-
-      {plan === "CREATOR" && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-surface/60 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted">Passez au Pro — 50 analyses — 34.99€</p>
-          <Link
-            href="/dashboard/pricing"
-            className="btn-animated w-full rounded-lg border border-accent/40 bg-accent/10 px-5 py-2 text-center text-sm font-medium text-accent-light transition-colors hover:bg-accent/20 sm:w-auto"
-          >
-            Upgrader Pro
-          </Link>
-        </div>
-      )}
-
-      {plan === "PRO" && quota.limit !== null && (
-        <div className="flex justify-end">
-          <span className="rounded-full border border-accent/40 bg-accent/10 px-4 py-1.5 text-xs font-semibold text-accent-light">
-            Plan Pro ✨
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function VideoCard({
-  thumbnail,
-  title,
-  channel,
-  duration,
-  views,
-  likes,
-  comments,
-  detectedLanguage,
-  detectedNiche,
-  detectedTone,
-}: {
-  thumbnail: string;
-  title?: string | null;
-  channel?: string;
-  duration?: string;
-  views?: number;
-  likes?: number;
-  comments?: number;
-  detectedLanguage?: string;
-  detectedNiche?: string;
-  detectedTone?: string;
-}) {
-  return (
-    <div className="animate-fade-up flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 sm:flex-row">
-      <img
-        src={thumbnail}
-        alt={title ?? "Miniature vidéo"}
-        className="h-auto w-full shrink-0 rounded-xl object-cover sm:w-40"
-      />
-      <div className="min-w-0 flex-1 space-y-3">
-        <div>
-          <h3 className="font-semibold leading-snug">{title ?? "Vidéo analysée"}</h3>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
-            {channel && <span>{channel}</span>}
-            {channel && duration && <span>·</span>}
-            {duration && <span>{duration}</span>}
-          </div>
-        </div>
-        {(views != null || likes != null || comments != null) && (
-          <div className="flex flex-wrap gap-4 text-sm">
-            {views != null && (
-              <span>
-                👁 <span className="font-medium text-foreground">{formatNumber(views)}</span>
-              </span>
-            )}
-            {likes != null && (
-              <span>
-                👍 <span className="font-medium text-foreground">{formatNumber(likes)}</span>
-              </span>
-            )}
-            {comments != null && (
-              <span>
-                💬 <span className="font-medium text-foreground">{formatNumber(comments)}</span>
-              </span>
-            )}
-          </div>
-        )}
-        <div className="flex flex-wrap gap-2">
-          {detectedLanguage && (
-            <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted">
-              🌐 {detectedLanguage}
-            </span>
-          )}
-          {detectedNiche && (
-            <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted">
-              🎯 {detectedNiche}
-            </span>
-          )}
-          {detectedTone && (
-            <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-xs text-muted">
-              🎭 {detectedTone}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -454,19 +106,15 @@ function MobilePreviewModal({ script, onClose }: { script: string; onClose: () =
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
       <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-        <button type="button" onClick={onClose} className="absolute -top-10 right-0 text-sm text-white/70 transition-colors hover:text-white">
-          Fermer ✕
-        </button>
+        <button type="button" onClick={onClose} className="absolute -top-10 right-0 text-sm text-white/70 hover:text-white">Fermer ✕</button>
         <div className="mx-auto w-[280px] rounded-[2.5rem] border-4 border-zinc-700 bg-zinc-900 p-3 shadow-2xl">
-          <div className="mb-2 flex justify-center">
-            <div className="h-5 w-24 rounded-full bg-zinc-800" />
-          </div>
+          <div className="mb-2 flex justify-center"><div className="h-5 w-24 rounded-full bg-zinc-800" /></div>
           <div ref={scrollRef} className="h-[480px] overflow-y-auto rounded-2xl bg-black px-4 py-6">
             <p className="whitespace-pre-wrap text-lg leading-relaxed text-white">{displayScript}</p>
           </div>
         </div>
         <label className="mt-4 flex items-center justify-center gap-2 text-sm text-white/80">
-          <input type="checkbox" checked={autoScroll} onChange={(e) => setAutoScroll(e.target.checked)} className="rounded accent-accent" />
+          <input type="checkbox" checked={autoScroll} onChange={(e) => setAutoScroll(e.target.checked)} className="rounded" />
           Défilement automatique
         </label>
       </div>
@@ -474,35 +122,151 @@ function MobilePreviewModal({ script, onClose }: { script: string; onClose: () =
   );
 }
 
-function ScriptSection({
-  title,
-  content,
-  colorClass,
-  onCopy,
-}: {
-  title: string;
-  content: string;
-  colorClass: string;
-  onCopy: () => void;
-}) {
-  const [copied, setCopied] = useState(false);
+function getCreditsBarColor(pct: number): string {
+  if (pct > 50) return "bg-green-500";
+  if (pct >= 20) return "bg-orange-500";
+  return "bg-red-500";
+}
 
+function FreePlanBanner() {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm">Vous avez 2 crédits gratuits ce mois — passez au plan Creator pour en avoir 50</p>
+      <button
+  type="button"
+  onClick={async () => {
+    const { data: { session } } = await getSupabase().auth.getSession();
+    if (!session) { window.location.href = "/login"; return; }
+    const res = await fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ plan: "creator" }),
+    });
+   const text = await res.text();
+    if (!text) { alert("Erreur serveur vide"); return; }
+    const data = JSON.parse(text);
+    if (data.url) window.location.href = data.url;
+    else alert(data.error ?? "Erreur inconnue");
+  }}
+  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
+>
+  Upgrader
+</button>
+    </div>
+  );
+}
+
+function AnimatedCounter({ value, duration = 1200 }: { value: number; duration?: number }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    let frame: number;
+    const start = performance.now();
+    function animate(now: number) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(value * eased));
+      if (progress < 1) frame = requestAnimationFrame(animate);
+    }
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [value, duration]);
+  return <span>{display}</span>;
+}
+
+function ScoreBar({ label, score, explanation }: { label: string; score: number; explanation?: string }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-medium">{label}</span>
+        <span className="font-bold text-accent">{score}/100</span>
+      </div>
+      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-border">
+        <div className={`progress-bar-animated h-full rounded-full ${getScoreColor(score)}`} style={{ width: `${score}%` }} />
+      </div>
+      {explanation && <p className="mt-1 text-xs text-muted">{explanation}</p>}
+    </div>
+  );
+}
+
+function CreditsBar({ quota }: { quota: QuotaInfo }) {
+  if (quota.limit === null) {
+    return (
+      <div className="rounded-2xl border border-accent/30 bg-surface p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted">Crédits restants ce mois</p>
+            <p className="mt-1 text-2xl font-bold gradient-premium-text">Illimité</p>
+          </div>
+          <span className="rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-semibold text-accent-light">{quota.plan}</span>
+        </div>
+      </div>
+    );
+  }
+  const remaining = quota.remaining ?? 0;
+  const pct = quota.limit > 0 ? (remaining / quota.limit) * 100 : 0;
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium">{remaining} crédit{remaining !== 1 ? "s" : ""} restant{remaining !== 1 ? "s" : ""} ce mois</p>
+          <p className="mt-1 text-xs text-muted">{remaining} / {quota.limit} crédits</p>
+        </div>
+        <span className="rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold text-muted">{quota.plan}</span>
+      </div>
+      <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-border">
+        <div className={`progress-bar-animated h-full rounded-full transition-all duration-500 ${getCreditsBarColor(pct)}`} style={{ width: `${pct}%` }} />
+      </div>
+      {remaining === 0 ? (
+        <p className="mt-3 text-xs text-red-400">Vous avez utilisé tous vos crédits ce mois. Rechargez avec le plan Creator.</p>
+      ) : (
+        <p className="mt-2 text-xs text-muted">1 analyse ou régénération = 1 crédit</p>
+      )}
+    </div>
+  );
+}
+
+function AccordionItem({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="rounded-xl border border-border bg-background overflow-hidden">
+      <button type="button" onClick={() => setOpen(!open)} className="btn-animated flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium">
+        {title}
+        <span className="text-accent">{open ? "−" : "+"}</span>
+      </button>
+      {open && <div className="border-t border-border px-4 py-3 text-sm leading-relaxed text-muted">{children}</div>}
+    </div>
+  );
+}
+
+function parseScriptSections(script: string): { title: string; content: string }[] {
+  const regex = /(\[[^\]]+\])/g;
+  const parts = script.split(regex).filter(Boolean);
+  const sections: { title: string; content: string }[] = [];
+  for (let i = 0; i < parts.length; i++) {
+    if (parts[i].startsWith("[")) {
+      sections.push({ title: parts[i], content: (parts[i + 1] ?? "").trim() });
+      i++;
+    }
+  }
+  if (sections.length === 0) return [{ title: "Script complet", content: script }];
+  return sections;
+}
+
+function ScriptSection({ title, content }: { title: string; content: string }) {
+  const [copied, setCopied] = useState(false);
   async function copySection() {
     await navigator.clipboard.writeText(`${title}\n${content}`);
-    onCopy();
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
-
   return (
-    <div className={`rounded-xl border p-4 ${colorClass}`}>
-      <div className="flex items-center justify-between gap-2">
+    <div className="rounded-xl border border-border bg-background p-4">
+      <div className="flex items-center justify-between">
         <span className="font-mono text-xs font-semibold text-secondary">{title}</span>
-        <button
-          type="button"
-          onClick={copySection}
-          className="btn-animated shrink-0 rounded-lg border border-border bg-background/50 px-2.5 py-1 text-xs text-muted transition-colors hover:border-accent-light hover:text-foreground"
-        >
+        <button type="button" onClick={copySection} className="btn-animated rounded-lg border border-border px-2.5 py-1 text-xs text-muted hover:border-accent-light hover:text-foreground">
           {copied ? "Copié ✓" : "Copier"}
         </button>
       </div>
@@ -511,47 +275,21 @@ function ScriptSection({
   );
 }
 
-function HookCard({ hook, index, onCopy }: { hook: string; index: number; onCopy: () => void }) {
-  const [copied, setCopied] = useState(false);
-
-  async function copyHook() {
-    await navigator.clipboard.writeText(hook);
-    onCopy();
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  return (
-    <div className="flex gap-3 rounded-xl border border-border bg-background p-4 transition-colors hover:border-accent/40">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/20 text-xs font-bold text-accent-light">
-        {index + 1}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm leading-relaxed">{hook}</p>
-        <button
-          type="button"
-          onClick={copyHook}
-          className="btn-animated mt-2 text-xs text-muted transition-colors hover:text-accent-light"
-        >
-          {copied ? "Copié ✓" : "Copier"}
-        </button>
-      </div>
-    </div>
-  );
+function enrichResult(item: AnalysisResult): AnalysisResult {
+  return { ...item, details: parseAnalysisDetails(item.improvements) ?? undefined };
 }
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
   const [videoUrl, setVideoUrl] = useState("");
   const [transcript, setTranscript] = useState("");
-  const [platform] = useState<string>("YouTube Shorts");
-  const [tone] = useState<string>(TONES[0]);
-  const [format] = useState<string>(FORMATS[0]);
-  const [outputFormat] = useState<string>(OUTPUT_FORMATS[0].value);
-  const [language] = useState<string>(LANGUAGES[0]);
-  const [niche] = useState("");
+  const [platform, setPlatform] = useState<string>("YouTube Shorts");
+  const [tone, setTone] = useState<string>(TONES[0]);
+  const [format, setFormat] = useState<string>(FORMATS[0]);
+  const [outputFormat, setOutputFormat] = useState<string>(OUTPUT_FORMATS[0].value);
+  const [language, setLanguage] = useState<string>(LANGUAGES[0]);
+  const [niche, setNiche] = useState("");
   const [personalStyle, setPersonalStyle] = useState("");
-  const [styleOpen, setStyleOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState("");
@@ -559,27 +297,21 @@ export default function DashboardPage() {
   const [history, setHistory] = useState<AnalysisResult[]>([]);
   const [quota, setQuota] = useState<QuotaInfo | null>(null);
   const [userEmail, setUserEmail] = useState("");
+  const [formatLockMessage, setFormatLockMessage] = useState("");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
+  const isFreePlan = quota?.plan === "FREE";
+  const availablePlatforms = isFreePlan ? FREE_PLATFORMS : ALL_PLATFORMS;
   const detectedPlatform = detectPlatformFromUrl(videoUrl);
   const showNonYouTubeMessage = isNonYouTubeUrl(videoUrl);
-  const isYouTube = detectedPlatform === "youtube";
-
-  const showToast = useCallback((msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2000);
-  }, []);
 
   const fetchHistory = useCallback(async (token: string) => {
     const res = await fetch("/api/analyze", { headers: { Authorization: `Bearer ${token}` } });
     if (res.ok) {
       const text = await res.text();
-      if (!text) {
-        alert("Erreur serveur vide");
-        return;
-      }
-      const data = JSON.parse(text);
+if (!text) { alert("Erreur serveur vide"); return; }
+const data = JSON.parse(text);
       setHistory((data.history ?? []).map(enrichResult));
       setQuota(data.quota ?? null);
     }
@@ -598,15 +330,21 @@ export default function DashboardPage() {
     });
   }, [searchParams, fetchHistory]);
 
+  useEffect(() => {
+    if (isFreePlan) {
+      setPlatform("YouTube Shorts");
+      setOutputFormat("Court");
+    }
+  }, [isFreePlan]);
+
   async function handleAnalyze(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
     setResult(null);
+    setSelectedTag(null);
     try {
-      const {
-        data: { session },
-      } = await getSupabase().auth.getSession();
+      const { data: { session } } = await getSupabase().auth.getSession();
       if (!session) {
         const params = new URLSearchParams({ redirect: "/dashboard", url: videoUrl });
         if (transcript.trim()) params.set("transcript", transcript.trim());
@@ -616,32 +354,16 @@ export default function DashboardPage() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({
-          videoUrl,
-          transcript: transcript.trim() || undefined,
-          platform,
-          tone,
-          format,
-          outputFormat,
-          language,
-          niche,
-          personalStyle,
-        }),
+        body: JSON.stringify({ videoUrl, transcript: transcript.trim() || undefined, platform, tone, format, outputFormat, language, niche, personalStyle }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Une erreur est survenue.");
-        return;
-      }
+      if (!res.ok) { setError(data.error ?? "Une erreur est survenue."); return; }
       const enriched = enrichResult(data.analysis);
       setResult(enriched);
       setHistory((prev) => [enriched, ...prev.filter((h) => h.id !== enriched.id)].slice(0, 5));
       if (data.quota) setQuota(data.quota);
-    } catch {
-      setError("Impossible de contacter le serveur.");
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError("Impossible de contacter le serveur."); }
+    finally { setLoading(false); }
   }
 
   async function handleRegenerate() {
@@ -649,9 +371,7 @@ export default function DashboardPage() {
     setError("");
     setRegenerating(true);
     try {
-      const {
-        data: { session },
-      } = await getSupabase().auth.getSession();
+      const { data: { session } } = await getSupabase().auth.getSession();
       if (!session) return;
       const res = await fetch("/api/analyze/regenerate", {
         method: "POST",
@@ -659,238 +379,267 @@ export default function DashboardPage() {
         body: JSON.stringify({ analysisId: result.id, personalStyle }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Une erreur est survenue.");
-        return;
-      }
+      if (!res.ok) { setError(data.error ?? "Une erreur est survenue."); return; }
       const enriched = enrichResult(data.analysis);
       setResult(enriched);
       setHistory((prev) => prev.map((h) => (h.id === enriched.id ? enriched : h)));
       if (data.quota) setQuota(data.quota);
-    } catch {
-      setError("Impossible de contacter le serveur.");
-    } finally {
-      setRegenerating(false);
-    }
+    } catch { setError("Impossible de contacter le serveur."); }
+    finally { setRegenerating(false); }
   }
 
-  async function copyFullScript() {
-    if (!result) return;
-    await navigator.clipboard.writeText(result.script);
-    showToast("Copié !");
-  }
-
+  const selectClass = "w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-accent-light";
+  const inputClass = "w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent-light";
   const details = result?.details;
   const scriptSections = result ? parseScriptSections(result.script) : [];
-  const fullReport = details?.fullReport || result?.whyViral || "";
-
-  const inputClass =
-    "w-full rounded-xl border border-border bg-background px-4 py-3.5 text-sm outline-none transition-colors focus:border-accent-light placeholder:text-muted/60";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg gradient-premium text-sm font-bold text-white">
-              V
-            </span>
+      <header className="border-b border-border px-6 py-4">
+        <div className="mx-auto flex max-w-3xl items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg gradient-premium text-sm font-bold text-white">V</span>
             <span className="text-lg font-semibold">Viralyz</span>
           </Link>
-          <div className="flex items-center gap-3 sm:gap-4">
-            {userEmail && <span className="hidden max-w-[180px] truncate text-sm text-muted sm:inline">{userEmail}</span>}
-            <button
-              type="button"
-              onClick={() => getSupabase().auth.signOut().then(() => (window.location.href = "/"))}
-              className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:border-accent/40 hover:text-foreground"
-            >
-              Déconnexion
-            </button>
+          <div className="flex items-center gap-4">
+            {userEmail && <span className="hidden text-sm text-muted sm:inline">{userEmail}</span>}
+            <button type="button" onClick={() => getSupabase().auth.signOut().then(() => (window.location.href = "/"))} className="text-sm text-muted hover:text-accent-light">Déconnexion</button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
-        {quota && <CreditsSection quota={quota} />}
-
-        {loading ? (
-          <LoadingAnimation />
-        ) : (
-          <form onSubmit={handleAnalyze} className="space-y-6">
-            <section className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
-              <h2 className="text-lg font-semibold sm:text-xl">Analysez une vidéo</h2>
-              <div className="mt-4">
-                <div className="relative">
-                  <input
-                    type="url"
-                    value={videoUrl}
-                    onChange={(e) => setVideoUrl(e.target.value)}
-                    placeholder="Collez l'URL YouTube..."
-                    required
-                    className={`${inputClass} pr-12 text-base sm:py-4`}
-                  />
-                  {isYouTube && (
-                    <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
-                      <PlatformIconSingle platform="youtube" className="h-6 w-6" />
-                    </div>
-                  )}
-                </div>
-                {showNonYouTubeMessage && (
-                  <p className="mt-3 rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-2.5 text-sm text-orange-400">
-                    TikTok et Instagram arrivent bientôt
-                  </p>
-                )}
-              </div>
-
-              <div className="mt-4 overflow-hidden rounded-xl border border-border bg-background">
-                <button
-                  type="button"
-                  onClick={() => setStyleOpen(!styleOpen)}
-                  className="btn-animated flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-surface/50"
-                >
-                  ✨ Style personnel (optionnel)
-                  <span className="text-accent">{styleOpen ? "−" : "+"}</span>
-                </button>
-                <div
-                  className="accordion-content border-t border-border"
-                  style={{ maxHeight: styleOpen ? "300px" : "0", opacity: styleOpen ? 1 : 0 }}
-                >
-                  <textarea
-                    value={personalStyle}
-                    onChange={(e) => setPersonalStyle(e.target.value)}
-                    placeholder="Collez 3 exemples de vos anciens scripts pour que l'IA imite votre style..."
-                    rows={4}
-                    className="w-full resize-none bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted/60"
-                  />
-                </div>
-              </div>
-
+      <main className="mx-auto max-w-3xl px-6 py-10 space-y-8">
+        <section className="space-y-4">
+          {quota?.plan === "FREE" && <FreePlanBanner />}
+          {quota && <CreditsBar quota={quota} />}
+          {quota?.plan !== "FREE" && (
+            <div className="flex justify-end">
               <button
-                type="submit"
-                disabled={loading}
-                className="btn-analyze-pulse mt-6 w-full rounded-xl px-6 py-4 text-base font-bold text-white disabled:opacity-50 sm:py-4"
-              >
-                Analyser
-              </button>
-            </section>
-          </form>
-        )}
+  type="button"
+  onClick={async () => {
+    const { data: { session } } = await getSupabase().auth.getSession();
+    if (!session) { window.location.href = "/login"; return; }
+    const res = await fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ plan: "creator" }),
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  }}
+  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
+>
+  Upgrader
+</button>
+            </div>
+          )}
+        </section>
 
-        {error && (
-          <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</div>
-        )}
+        <form onSubmit={handleAnalyze} className="space-y-8">
+          <section className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+            <h2 className="text-lg font-semibold">Analyser une vidéo</h2>
+            <div>
+              <label className="text-sm font-medium">URL de votre vidéo</label>
+              <div className="mt-2 flex items-center gap-3">
+                <input type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." required className={`flex-1 ${inputClass}`} />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background">
+                  <PlatformIconSingle platform={detectedPlatform} className="h-5 w-5" />
+                </div>
+              </div>
+              {detectedPlatform && (
+                <p className="mt-1.5 text-xs text-muted">Plateforme détectée : {PLATFORM_LABELS[detectedPlatform]}{detectedPlatform === "youtube" && " — analyse automatique"}</p>
+              )}
+            </div>
+            {showNonYouTubeMessage && (
+              <>
+                <div className="rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm">TikTok, Instagram et X arrivent bientôt. En attendant, collez votre transcription ci-dessous.</div>
+                <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} placeholder="Collez votre transcription ici..." rows={5} className={`resize-none ${inputClass}`} />
+              </>
+            )}
+          </section>
+
+          <section className="rounded-2xl border border-border bg-surface p-6 space-y-3">
+            <h2 className="text-lg font-semibold">Format de sortie</h2>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {OUTPUT_FORMATS.map((f) => {
+                const isLocked = isFreePlan && f.value !== "Court";
+                return (
+                  <button key={f.value} type="button" onClick={() => { if (isLocked) { setFormatLockMessage("Format moyen et long disponibles dès le plan Creator"); return; } setFormatLockMessage(""); setOutputFormat(f.value); }}
+                    className={`rounded-xl border p-4 text-left transition-colors ${isLocked ? "cursor-not-allowed border-border/60 bg-background/50 opacity-60" : outputFormat === f.value ? "border-accent-light bg-accent/10" : "border-border bg-background hover:border-accent/40"}`}>
+                    <p className="text-sm font-semibold">{f.label}{isLocked && " 🔒"}</p>
+                    <p className="mt-1 text-xs text-muted">{f.desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+            {formatLockMessage && <p className="text-xs text-orange-400">{formatLockMessage}</p>}
+          </section>
+
+          <section className="grid gap-4 grid-cols-2">
+            <div>
+              <label className="text-sm font-medium text-muted">Plateforme</label>
+              <select value={platform} onChange={(e) => setPlatform(e.target.value)} className={`mt-1.5 ${selectClass}`}>
+                {availablePlatforms.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
+              {isFreePlan && (
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-muted">TikTok, Instagram et X disponibles dès le plan Creator</p>
+                  <button
+  type="button"
+  onClick={async () => {
+    const { data: { session } } = await getSupabase().auth.getSession();
+    if (!session) { window.location.href = "/login"; return; }
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ plan: "creator" }),
+      });
+      const text = await res.text();
+      if (!text) { alert("Erreur serveur vide"); return; }
+      const data = JSON.parse(text);
+      if (data.url) window.location.href = data.url;
+      else alert(data.error ?? "Erreur inconnue");
+    } catch (err) {
+      console.error("Stripe error:", err);
+      alert("Erreur lors de la redirection vers le paiement");
+    }
+  }}
+  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
+>
+  Upgrader
+</button>
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted">Ton</label>
+              <select value={tone} onChange={(e) => setTone(e.target.value)} className={`mt-1.5 ${selectClass}`}>
+                {TONES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted">Format narratif</label>
+              <select value={format} onChange={(e) => setFormat(e.target.value)} className={`mt-1.5 ${selectClass}`}>
+                {FORMATS.map((f) => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted">Langue</label>
+              <select value={language} onChange={(e) => setLanguage(e.target.value)} className={`mt-1.5 ${selectClass}`}>
+                {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-muted">Niche</label>
+              <input type="text" value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="ex: productivité, fitness, finance..." className={`mt-1.5 ${inputClass}`} />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted">Style personnel</label>
+              <textarea value={personalStyle} onChange={(e) => setPersonalStyle(e.target.value)} placeholder="Collez 3 exemples de vos anciens scripts pour que l'IA imite votre style..." rows={5} className={`mt-1.5 resize-none ${inputClass}`} />
+            </div>
+          </section>
+
+          <div className="flex justify-center">
+            <button type="submit" disabled={loading} className="btn-analyze-main rounded-2xl px-10 py-4 text-base font-bold text-white disabled:opacity-50">
+              {loading ? "Analyse en cours..." : "Analyser et générer mon script"}
+            </button>
+          </div>
+        </form>
+
+        {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</div>}
 
         {result && (
           <section className="animate-fade-up space-y-6">
-            {details?.thumbnail && (
-              <VideoCard
-                thumbnail={details.thumbnail}
-                title={result.videoTitle}
-                channel={details.channel}
-                duration={details.duration}
-                views={details.views}
-                likes={details.likes}
-                comments={details.comments}
-                detectedLanguage={details.detectedLanguage}
-                detectedNiche={details.detectedNiche}
-                detectedTone={details.detectedTone}
-              />
-            )}
-
-            <div className="grid gap-6 lg:grid-cols-[auto_1fr]">
-              <div className="rounded-2xl border border-border bg-surface p-6 text-center">
-                <p className="mb-4 text-sm font-medium text-muted">Score viral</p>
-                <ViralScoreCircle score={result.viralScore} />
+            <h2 className="text-xl font-semibold">Résultat de l'analyse</h2>
+            <div className="rounded-2xl border border-border bg-surface p-6 space-y-6">
+              <div className="text-center">
+                <p className="text-sm text-muted">Score viral</p>
+                <p className="mt-1 text-5xl font-bold"><AnimatedCounter value={result.viralScore} /><span className="text-2xl text-muted">/100</span></p>
+                <div className="mx-auto mt-4 h-3 max-w-md overflow-hidden rounded-full bg-border">
+                  <div className={`progress-bar-animated h-full rounded-full ${getScoreColor(result.viralScore)}`} style={{ width: `${result.viralScore}%` }} />
+                </div>
               </div>
-
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-4">
                 <ScoreBar label="Hook" score={result.hookStrength} explanation={details?.hookExplanation} />
                 <ScoreBar label="Rétention" score={result.retentionScore} explanation={details?.retentionExplanation} />
                 <ScoreBar label="CTA" score={result.ctaScore} explanation={details?.ctaExplanation} />
               </div>
-            </div>
-
-            {result.viralTags.length > 0 && (
-              <div className="rounded-2xl border border-border bg-surface p-5">
-                <h4 className="text-sm font-semibold">Tags viraux</h4>
-                <div className="mt-3 flex flex-wrap gap-2">
+              <div>
+                <h4 className="text-sm font-medium text-secondary">Tags viraux</h4>
+                <div className="mt-2 flex flex-wrap gap-2">
                   {result.viralTags.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(tag);
-                        showToast("Copié !");
-                      }}
-                      className="tag-viral rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-xs text-accent-light"
-                    >
+                    <button key={tag} type="button" onClick={() => { setSelectedTag(tag); navigator.clipboard.writeText(tag); }}
+                      className={`tag-viral rounded-full border px-3 py-1 text-xs ${selectedTag === tag ? "border-accent-light bg-accent/20 text-accent-light" : "border-border text-muted"}`}>
                       {tag}
                     </button>
                   ))}
                 </div>
               </div>
-            )}
-
-            {fullReport && (
-              <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
-                <h4 className="mb-4 text-sm font-semibold">Rapport complet</h4>
-                <div className="report-markdown rounded-xl bg-[#13131A] p-4 sm:p-6">
-                  <ReactMarkdown>{fullReport}</ReactMarkdown>
-                </div>
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-secondary">Analyse détaillée</h4>
+                <AccordionItem title="Pourquoi cette vidéo a explosé" defaultOpen>
+                  <p className="whitespace-pre-wrap">{result.whyViral}</p>
+                </AccordionItem>
+                <AccordionItem title="Points faibles identifiés">
+                  {details?.weakPoints?.length ? (
+                    <ul className="list-disc pl-4 space-y-1">{details.weakPoints.map((p, i) => <li key={i}>{p}</li>)}</ul>
+                  ) : <p>{result.improvements && !details ? result.improvements : "Non disponible"}</p>}
+                </AccordionItem>
+                <AccordionItem title="Opportunités d'amélioration">
+                  {details?.opportunities?.length ? (
+                    <ul className="list-disc pl-4 space-y-1">{details.opportunities.map((p, i) => <li key={i}>{p}</li>)}</ul>
+                  ) : <p>Aucune suggestion disponible.</p>}
+                </AccordionItem>
+                {details?.narrativeStructure && (
+                  <AccordionItem title="Structure narrative">
+                    <div className="space-y-2">
+                      <p><strong className="text-foreground">Hook :</strong> {details.narrativeStructure.hook}</p>
+                      <p><strong className="text-foreground">Développement :</strong> {details.narrativeStructure.development}</p>
+                      <p><strong className="text-foreground">Climax :</strong> {details.narrativeStructure.climax}</p>
+                      <p><strong className="text-foreground">CTA :</strong> {details.narrativeStructure.cta}</p>
+                    </div>
+                  </AccordionItem>
+                )}
+                {details?.emotions && details.emotions.length > 0 && (
+                  <AccordionItem title="Émotions déclenchées">
+                    <div className="flex flex-wrap gap-2">{details.emotions.map((e) => <span key={e} className="rounded-full border border-border px-3 py-1 text-xs">{e}</span>)}</div>
+                  </AccordionItem>
+                )}
+                {details?.algorithmTechniques && details.algorithmTechniques.length > 0 && (
+                  <AccordionItem title="Techniques algorithmiques">
+                    <ul className="list-disc pl-4 space-y-1">{details.algorithmTechniques.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                  </AccordionItem>
+                )}
               </div>
-            )}
+            </div>
 
-            {details?.alternativeHooks && details.alternativeHooks.length > 0 && (
-              <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
-                <h4 className="mb-4 text-sm font-semibold">🎣 Hooks alternatifs</h4>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {details.alternativeHooks.map((hook, i) => (
-                    <HookCard key={i} hook={hook} index={i} onCopy={() => showToast("Copié !")} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h4 className="text-sm font-semibold">📝 Script généré</h4>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={copyFullScript}
-                    className="btn-animated w-full rounded-lg border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:border-accent-light hover:text-foreground sm:w-auto"
-                  >
-                    Copier tout
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowMobilePreview(true)}
-                    className="btn-animated w-full rounded-lg border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:border-accent-light hover:text-foreground sm:w-auto"
-                  >
-                    Voir sur mobile
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleRegenerate}
-                    disabled={regenerating}
-                    className="btn-animated inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:border-accent-light hover:text-foreground disabled:opacity-50 sm:w-auto"
-                  >
+            <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h4 className="text-sm font-medium text-secondary">Script généré</h4>
+                <div className="flex flex-wrap items-center gap-2">
+                  {result.similarityScore != null && (
+                    <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${getSimilarityBadgeColor(result.similarityScore)}`}>
+                      Similarité avec votre style : {result.similarityScore}%
+                    </span>
+                  )}
+                  <button type="button" onClick={() => setShowMobilePreview(true)} className="btn-animated rounded-lg border border-border px-3 py-1.5 text-xs text-muted hover:border-accent-light hover:text-foreground">Voir sur mobile</button>
+                  <button type="button" onClick={handleRegenerate} disabled={regenerating} className="btn-animated inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted hover:border-accent-light hover:text-foreground disabled:opacity-50">
                     <RefreshIcon className={`h-3.5 w-3.5 ${regenerating ? "animate-spin" : ""}`} />
-                    {regenerating ? "Génération..." : "Régénérer (1 crédit)"}
+                    {regenerating ? "Génération..." : "Régénérer une variante"}
                   </button>
                 </div>
               </div>
-              <div className="space-y-3">
-                {scriptSections.map((section, i) => (
-                  <ScriptSection
-                    key={i}
-                    title={section.title}
-                    content={section.content}
-                    colorClass={SCRIPT_SECTION_COLORS[i % SCRIPT_SECTION_COLORS.length]}
-                    onCopy={() => showToast("Copié !")}
-                  />
-                ))}
-              </div>
+              {scriptSections.map((section, i) => <ScriptSection key={i} title={section.title} content={section.content} />)}
             </div>
 
             {showMobilePreview && <MobilePreviewModal script={result.script} onClose={() => setShowMobilePreview(false)} />}
@@ -900,46 +649,24 @@ export default function DashboardPage() {
         {history.length > 0 && (
           <section>
             <h2 className="text-lg font-semibold">Historique récent</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {history.slice(0, 5).map((item) => {
-                const itemDetails = item.details ?? parseAnalysisDetails(item.improvements);
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setResult(enrichResult(item))}
-                    className="pricing-card flex items-start gap-3 rounded-xl border border-border bg-surface p-3 text-left transition-colors hover:border-accent-light"
-                  >
-                    {itemDetails?.thumbnail ? (
-                      <img
-                        src={itemDetails.thumbnail}
-                        alt=""
-                        className="h-14 w-20 shrink-0 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-lg bg-background text-lg">
-                        🎬
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{item.videoTitle ?? "Analyse vidéo"}</p>
-                      <p className="mt-0.5 text-xs text-muted">{formatRelativeDate(item.createdAt)}</p>
-                    </div>
-                    <span
-                      className="shrink-0 text-lg font-bold"
-                      style={{ color: getScoreHexColor(item.viralScore) }}
-                    >
-                      {item.viralScore}
-                    </span>
-                  </button>
-                );
-              })}
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              {history.slice(0, 5).map((item) => (
+                <button key={item.id} type="button" onClick={() => setResult(enrichResult(item))}
+                  className="pricing-card flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-accent-light">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{item.videoTitle ?? "Analyse vidéo"}</p>
+                    <p className="mt-0.5 text-xs text-muted">{new Date(item.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                  </div>
+                  <div className="ml-3 shrink-0 text-right">
+                    <span className={`inline-block h-2 w-2 rounded-full ${getScoreColor(item.viralScore)}`} />
+                    <p className="text-lg font-bold text-accent">{item.viralScore}</p>
+                  </div>
+                </button>
+              ))}
             </div>
           </section>
         )}
       </main>
-
-      <Toast message={toast} />
     </div>
   );
 }
