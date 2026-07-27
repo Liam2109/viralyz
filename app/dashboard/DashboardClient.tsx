@@ -153,7 +153,12 @@ function FreePlanBanner() {
   }}
   className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
 >
+  <Link
+  href="/dashboard/pricing"
+  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
+>
   Upgrader
+</Link>
 </button>
     </div>
   );
@@ -432,7 +437,12 @@ const data = JSON.parse(text);
   }}
   className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
 >
+  <Link
+  href="/dashboard/pricing"
+  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
+>
   Upgrader
+</Link>
 </button>
             </div>
           )}
@@ -513,7 +523,12 @@ const data = JSON.parse(text);
   }}
   className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
 >
+  <Link
+  href="/dashboard/pricing"
+  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
+>
   Upgrader
+</Link>
 </button>
                 </div>
               )}
