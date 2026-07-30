@@ -63,7 +63,7 @@ export default function LoginPage() {
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-sm font-bold text-white">V</span>
             <span className="text-xl font-semibold text-foreground">Viralyz</span>
           </Link>
-          <h1 className="mt-8 text-2xl font-bold text-foreground">Connexion</h1>
+          <h1 className="mt-8 text-2xl font-bold text-foreground">Se connecter</h1>
           <p className="mt-2 text-sm text-muted">Accédez à votre dashboard d&apos;analyses virales.</p>
         </div>
 
@@ -95,7 +95,7 @@ export default function LoginPage() {
 
           <button type="submit" disabled={loading || !turnstileToken}
             className="mt-6 w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50">
-            {loading ? "Connexion..." : "Se connecter"}
+            {loading ? "Se connecter..." : "Se connecter"}
           </button>
         </form>
 

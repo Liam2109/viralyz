@@ -132,34 +132,12 @@ function FreePlanBanner() {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm">Vous avez 2 crédits gratuits ce mois — passez au plan Creator pour en avoir 50</p>
-      <button
-  type="button"
-  onClick={async () => {
-    const { data: { session } } = await getSupabase().auth.getSession();
-    if (!session) { window.location.href = "/login"; return; }
-    const res = await fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ plan: "creator" }),
-    });
-   const text = await res.text();
-    if (!text) { alert("Erreur serveur vide"); return; }
-    const data = JSON.parse(text);
-    if (data.url) window.location.href = data.url;
-    else alert(data.error ?? "Erreur inconnue");
-  }}
-  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
->
-  <Link
+     <Link
   href="/dashboard/pricing"
   className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
 >
   Upgrader
 </Link>
-</button>
     </div>
   );
 }
@@ -419,31 +397,12 @@ const data = JSON.parse(text);
           {quota && <CreditsBar quota={quota} />}
           {quota?.plan !== "FREE" && (
             <div className="flex justify-end">
-              <button
-  type="button"
-  onClick={async () => {
-    const { data: { session } } = await getSupabase().auth.getSession();
-    if (!session) { window.location.href = "/login"; return; }
-    const res = await fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ plan: "creator" }),
-    });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
-  }}
-  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
->
-  <Link
+              <Link
   href="/dashboard/pricing"
   className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
 >
   Upgrader
 </Link>
-</button>
             </div>
           )}
         </section>
@@ -497,39 +456,12 @@ const data = JSON.parse(text);
               {isFreePlan && (
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-muted">TikTok, Instagram et X disponibles dès le plan Creator</p>
-                  <button
-  type="button"
-  onClick={async () => {
-    const { data: { session } } = await getSupabase().auth.getSession();
-    if (!session) { window.location.href = "/login"; return; }
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ plan: "creator" }),
-      });
-      const text = await res.text();
-      if (!text) { alert("Erreur serveur vide"); return; }
-      const data = JSON.parse(text);
-      if (data.url) window.location.href = data.url;
-      else alert(data.error ?? "Erreur inconnue");
-    } catch (err) {
-      console.error("Stripe error:", err);
-      alert("Erreur lors de la redirection vers le paiement");
-    }
-  }}
-  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
->
-  <Link
+              <Link
   href="/dashboard/pricing"
   className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
 >
   Upgrader
 </Link>
-</button>
                 </div>
               )}
             </div>
