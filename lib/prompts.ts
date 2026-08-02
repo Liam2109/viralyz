@@ -132,7 +132,7 @@ Analyse :
 ${analysisContext}
 
 RÈGLES :
-1. Détecte la langue automatiquement et génère dans cette langue
+1. Génère TOUJOURS le script en français, peu importe la langue de la vidéo analysée
 2. Identifie les grandes parties naturelles de la vidéo et structure le script en conséquence
 3. Hook fort qui arrête le scroll
 4. CTA naturel à la fin
