@@ -380,10 +380,19 @@ const data = JSON.parse(text);
     const transcriptParam = searchParams.get("transcript");
     if (urlParam) setVideoUrl(urlParam);
     if (transcriptParam) setTranscript(transcriptParam);
-    getSupabase().auth.getSession().then(({ data: { session } }) => {
+    getSupabase().auth.getSession().then(async ({ data: { session } }) => {
       if (session?.access_token) {
         setUserEmail(session.user.email ?? "");
         fetchHistory(session.access_token);
+        const profileRes = await fetch("/api/profile", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          if (!profileData.profile || profileData.profile.onboardingDone === false) {
+            window.location.href = "/onboarding";
+          }
+        }
       }
     });
   }, [searchParams, fetchHistory]);
@@ -420,6 +429,11 @@ const data = JSON.parse(text);
       setResult(enriched);
       setHistory((prev) => [enriched, ...prev.filter((h) => h.id !== enriched.id)].slice(0, 5));
       if (data.quota) setQuota(data.quota);
+      fetch("/api/profile/add-xp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ xp: 10, type: "analysis" }),
+      }).catch(() => {});
     } catch { setError("Impossible de contacter le serveur."); }
     finally { setLoading(false); }
   }
@@ -469,6 +483,7 @@ const data = JSON.parse(text);
                 Plan Pro ✨
               </span>
             )}
+            <Link href="/profile" className="text-sm text-muted hover:text-accent-light">Mon profil</Link>
             {userEmail && <span className="hidden text-sm text-muted sm:inline">{userEmail}</span>}
             <button type="button" onClick={() => getSupabase().auth.signOut().then(() => (window.location.href = "/"))} className="text-sm text-muted hover:text-accent-light">Déconnexion</button>
           </div>

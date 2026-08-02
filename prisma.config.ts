@@ -1,6 +1,13 @@
 import path from "path"
-import { defineConfig } from "prisma/config"
+import { config as loadEnv } from "dotenv"
+import { defineConfig, env } from "prisma/config"
+
+loadEnv({ path: ".env.local" })
+loadEnv({ path: ".env" })
 
 export default defineConfig({
   schema: path.join("prisma", "schema.prisma"),
+  datasource: {
+    url: env("DATABASE_URL"),
+  },
 })
