@@ -241,3 +241,91 @@ body {
   overflow: hidden;
   transition: max-height 300ms ease, opacity 300ms ease;
 }
+
+/* Toast notification */
+.toast-notification {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #7C3AED;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 9999;
+  animation: slideInRight 0.3s ease, fadeOut 0.3s ease 1.7s forwards;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Score circle animation */
+@keyframes scoreCount {
+  from { stroke-dashoffset: 283; }
+  to { stroke-dashoffset: var(--target-offset); }
+}
+
+/* Pulse bouton analyser */
+@keyframes analyzePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+  50% { box-shadow: 0 0 0 12px rgba(124, 58, 237, 0); }
+}
+
+.btn-analyze-pulse:hover {
+  animation: analyzePulse 1.5s infinite;
+}
+
+/* Fade up results */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.5s ease forwards;
+}
+
+/* Markdown report */
+.report-markdown h2 {
+  color: #F8F8FF;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.report-markdown h3 {
+  color: #F8F8FF;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+.report-markdown p {
+  color: #8B8B9E;
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+}
+
+.report-markdown ul, .report-markdown ol {
+  color: #8B8B9E;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.report-markdown li {
+  margin-bottom: 0.25rem;
+  line-height: 1.6;
+}
+
+.report-markdown strong {
+  color: #F8F8FF;
+}

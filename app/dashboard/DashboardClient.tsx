@@ -10,6 +10,12 @@ import {
   isNonYouTubeUrl,
   PLATFORM_LABELS,
 } from "@/lib/platforms";
+import ReactMarkdown from "react-markdown";
+import AnalysisLoadingPanel from "@/components/dashboard/AnalysisLoadingPanel";
+import ViralScoreCircle from "@/components/dashboard/ViralScoreCircle";
+import VideoMetadataCard from "@/components/dashboard/VideoMetadataCard";
+import UpgradeSuccessModal from "@/components/dashboard/UpgradeSuccessModal";
+import { formatRelativeDate } from "@/lib/dashboard-utils";
 
 const ALL_PLATFORMS = ["TikTok", "YouTube Shorts", "Instagram Reels", "X"] as const;
 const FREE_PLATFORMS = ["YouTube Shorts"] as const;
@@ -31,6 +37,17 @@ interface AnalysisDetails {
   narrativeStructure?: { hook: string; development: string; climax: string; cta: string };
   emotions?: string[];
   algorithmTechniques?: string[];
+  thumbnail?: string;
+  views?: number;
+  likes?: number;
+  comments?: number;
+  duration?: string;
+  channel?: string;
+  alternativeHooks?: string[];
+  fullReport?: string;
+  detectedLanguage?: string;
+  detectedNiche?: string;
+  detectedTone?: string;
 }
 
 interface AnalysisResult {
@@ -140,6 +157,46 @@ function FreePlanBanner() {
 </Link>
     </div>
   );
+}
+
+function CreatorUpgradeBanner() {
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-muted">Passez au Pro — 50 analyses — 34.99€/mois</p>
+      <Link
+        href="/dashboard/pricing"
+        className="btn-animated w-full rounded-lg border border-accent/50 bg-accent/10 px-4 py-2 text-center text-sm font-semibold text-accent-light sm:w-auto"
+      >
+        Voir Pro
+      </Link>
+    </div>
+  );
+}
+
+function AlternativeHookCard({ hook, index, onCopy }: { hook: string; index: number; onCopy: () => void }) {
+  const [copied, setCopied] = useState(false);
+  async function handleCopy() {
+    await navigator.clipboard.writeText(hook);
+    onCopy();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+  return (
+    <div className="rounded-xl border border-border bg-background p-4">
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-xs font-semibold text-accent">#{index + 1}</span>
+        <button type="button" onClick={handleCopy} className="btn-animated shrink-0 rounded-lg border border-border px-2.5 py-1 text-xs text-muted hover:border-accent-light">
+          {copied ? "Copié ✓" : "Copier"}
+        </button>
+      </div>
+      <p className="mt-2 text-sm leading-relaxed text-muted">{hook}</p>
+    </div>
+  );
+}
+
+function getHistoryThumbnail(improvements: string): string | undefined {
+  const d = parseAnalysisDetails(improvements);
+  return d?.thumbnail;
 }
 
 function AnimatedCounter({ value, duration = 1200 }: { value: number; duration?: number }) {
@@ -283,6 +340,24 @@ export default function DashboardPage() {
   const [formatLockMessage, setFormatLockMessage] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+
+  function showCopyToast() {
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), 2000);
+  }
+
+  async function copyViralTag(tag: string) {
+    setSelectedTag(tag);
+    await navigator.clipboard.writeText(tag);
+    showCopyToast();
+  }
+
+  async function copyFullScript() {
+    if (!result) return;
+    await navigator.clipboard.writeText(result.script);
+    showCopyToast();
+  }
 
   const isFreePlan = quota?.plan === "FREE";
   const availablePlatforms = isFreePlan ? FREE_PLATFORMS : ALL_PLATFORMS;
@@ -376,23 +451,33 @@ const data = JSON.parse(text);
   const details = result?.details;
   const scriptSections = result ? parseScriptSections(result.script) : [];
 
+  const reportMarkdown = details?.fullReport ?? result?.whyViral ?? "";
+
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border px-6 py-4">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
+      {toastVisible && <div className="toast-notification" role="status">✓ Copié !</div>}
+      <UpgradeSuccessModal plan={quota?.plan ?? "CREATOR"} />
+      <header className="border-b border-border px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg gradient-premium text-sm font-bold text-white">V</span>
             <span className="text-lg font-semibold">Viralyz</span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {quota?.plan === "PRO" && (
+              <span className="rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-semibold text-accent-light">
+                Plan Pro ✨
+              </span>
+            )}
             {userEmail && <span className="hidden text-sm text-muted sm:inline">{userEmail}</span>}
             <button type="button" onClick={() => getSupabase().auth.signOut().then(() => (window.location.href = "/"))} className="text-sm text-muted hover:text-accent-light">Déconnexion</button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 py-10 space-y-8">
+      <main className="mx-auto max-w-3xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
         <section className="space-y-4">
+          {quota?.plan === "CREATOR" && <CreatorUpgradeBanner />}
           {quota?.plan === "FREE" && <FreePlanBanner />}
           {quota && <CreditsBar quota={quota} />}
           {quota?.plan !== "FREE" && (
@@ -407,8 +492,11 @@ const data = JSON.parse(text);
           )}
         </section>
 
+        {loading ? (
+          <AnalysisLoadingPanel />
+        ) : (
         <form onSubmit={handleAnalyze} className="space-y-8">
-          <section className="rounded-2xl border border-border bg-surface p-6 space-y-4">
+          <section className="rounded-2xl border border-border bg-surface p-4 space-y-4 sm:p-6">
             <h2 className="text-lg font-semibold">Analyser une vidéo</h2>
             <div>
               <label className="text-sm font-medium">URL de votre vidéo</label>
@@ -428,8 +516,12 @@ const data = JSON.parse(text);
                 <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} placeholder="Collez votre transcription ici..." rows={5} className={`resize-none ${inputClass}`} />
               </>
             )}
+            <AccordionItem title="✨ Style personnel (optionnel)" defaultOpen={false}>
+              <textarea value={personalStyle} onChange={(e) => setPersonalStyle(e.target.value)} placeholder="Collez 3 exemples de vos anciens scripts pour que l'IA imite votre style..." rows={5} className={`w-full resize-none ${inputClass}`} />
+            </AccordionItem>
           </section>
 
+          <div className="hidden" aria-hidden="true">
           <section className="rounded-2xl border border-border bg-surface p-6 space-y-3">
             <h2 className="text-lg font-semibold">Format de sortie</h2>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -495,21 +587,54 @@ const data = JSON.parse(text);
               <textarea value={personalStyle} onChange={(e) => setPersonalStyle(e.target.value)} placeholder="Collez 3 exemples de vos anciens scripts pour que l'IA imite votre style..." rows={5} className={`mt-1.5 resize-none ${inputClass}`} />
             </div>
           </section>
+          </div>
 
           <div className="flex justify-center">
-            <button type="submit" disabled={loading} className="btn-analyze-main rounded-2xl px-10 py-4 text-base font-bold text-white disabled:opacity-50">
-              {loading ? "Analyse en cours..." : "Analyser et générer mon script"}
+            <button type="submit" disabled={loading} className="btn-analyze-pulse btn-analyze-main w-full rounded-2xl px-10 py-4 text-base font-bold text-white disabled:opacity-50 sm:w-auto">
+              {loading ? "Analyse en cours..." : "Analyser"}
             </button>
           </div>
         </form>
+        )}
 
         {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</div>}
 
         {result && (
           <section className="animate-fade-up space-y-6">
             <h2 className="text-xl font-semibold">Résultat de l'analyse</h2>
+            <VideoMetadataCard
+              thumbnail={details?.thumbnail}
+              videoTitle={result.videoTitle}
+              channel={details?.channel}
+              duration={details?.duration}
+              views={details?.views}
+              likes={details?.likes}
+              comments={details?.comments}
+              detectedLanguage={details?.detectedLanguage}
+              detectedNiche={details?.detectedNiche}
+              detectedTone={details?.detectedTone}
+            />
+            <div className="rounded-2xl border border-border bg-surface p-6">
+              <ViralScoreCircle score={result.viralScore} />
+            </div>
+            {(reportMarkdown) && (
+              <div className="report-markdown rounded-xl border border-[#1E1E2E] bg-[#13131A] p-6 sm:p-[24px]">
+                <h4 className="mb-3 text-sm font-medium text-secondary">Rapport d&apos;analyse</h4>
+                <ReactMarkdown>{reportMarkdown}</ReactMarkdown>
+              </div>
+            )}
+            {details?.alternativeHooks && details.alternativeHooks.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-secondary">🎣 Hooks alternatifs</h4>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {details.alternativeHooks.map((hook, i) => (
+                    <AlternativeHookCard key={i} hook={hook} index={i} onCopy={showCopyToast} />
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="rounded-2xl border border-border bg-surface p-6 space-y-6">
-              <div className="text-center">
+              <div className="hidden text-center" aria-hidden="true">
                 <p className="text-sm text-muted">Score viral</p>
                 <p className="mt-1 text-5xl font-bold"><AnimatedCounter value={result.viralScore} /><span className="text-2xl text-muted">/100</span></p>
                 <div className="mx-auto mt-4 h-3 max-w-md overflow-hidden rounded-full bg-border">
@@ -525,7 +650,7 @@ const data = JSON.parse(text);
                 <h4 className="text-sm font-medium text-secondary">Tags viraux</h4>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {result.viralTags.map((tag) => (
-                    <button key={tag} type="button" onClick={() => { setSelectedTag(tag); navigator.clipboard.writeText(tag); }}
+                    <button key={tag} type="button" onClick={() => copyViralTag(tag)}
                       className={`tag-viral rounded-full border px-3 py-1 text-xs ${selectedTag === tag ? "border-accent-light bg-accent/20 text-accent-light" : "border-border text-muted"}`}>
                       {tag}
                     </button>
@@ -572,8 +697,13 @@ const data = JSON.parse(text);
 
             <div className="rounded-2xl border border-border bg-surface p-6 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h4 className="text-sm font-medium text-secondary">Script généré</h4>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+                  <h4 className="text-sm font-medium text-secondary">Script généré</h4>
+                  <button type="button" onClick={copyFullScript} className="btn-animated w-full rounded-lg border border-border px-3 py-1.5 text-xs text-muted hover:border-accent-light sm:w-auto">
+                    📋 Copier tout le script
+                  </button>
+                </div>
+                <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                   {result.similarityScore != null && (
                     <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${getSimilarityBadgeColor(result.similarityScore)}`}>
                       Similarité avec votre style : {result.similarityScore}%
@@ -597,19 +727,25 @@ const data = JSON.parse(text);
           <section>
             <h2 className="text-lg font-semibold">Historique récent</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-              {history.slice(0, 5).map((item) => (
+              {history.slice(0, 5).map((item) => {
+                const thumb = getHistoryThumbnail(item.improvements);
+                return (
                 <button key={item.id} type="button" onClick={() => setResult(enrichResult(item))}
-                  className="pricing-card flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-accent-light">
+                  className="pricing-card flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-accent-light">
+                  {thumb && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={thumb} alt="" className="hidden h-12 w-20 shrink-0 rounded-md object-cover sm:block" />
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.videoTitle ?? "Analyse vidéo"}</p>
-                    <p className="mt-0.5 text-xs text-muted">{new Date(item.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                    <p className="mt-0.5 text-xs text-muted">{formatRelativeDate(item.createdAt)}</p>
                   </div>
-                  <div className="ml-3 shrink-0 text-right">
+                  <div className="ml-0 shrink-0 text-right sm:ml-3">
                     <span className={`inline-block h-2 w-2 rounded-full ${getScoreColor(item.viralScore)}`} />
                     <p className="text-lg font-bold text-accent">{item.viralScore}</p>
                   </div>
                 </button>
-              ))}
+              );})}
             </div>
           </section>
         )}

@@ -1,318 +1,303 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Navbar from "@/components/Navbar";
-import PricingCard from "@/components/PricingCard";
-import { PlatformSupportBadges } from "@/components/PlatformSupportBadges";
-import { isNonYouTubeUrl } from "@/lib/platforms";
 
 const faqItems = [
   {
     q: "Comment Viralyz analyse-t-il une vidéo ?",
-    a: "Notre IA décortique la structure, le hook, la rétention et le CTA de la vidéo source pour identifier les mécanismes viraux, puis génère un script adapté à votre niche.",
+    a: "YouTube Data API + GPT-4o analysent le titre, les métriques réelles et la structure du contenu (hook, rétention, CTA) pour identifier les mécanismes viraux.",
   },
   {
     q: "Quelles plateformes sont supportées ?",
-    a: "YouTube, TikTok, Instagram Reels et X. Pour TikTok et Instagram, le plan Creator est requis avec transcription manuelle.",
+    a: "YouTube est disponible dès maintenant. TikTok et Instagram arrivent en août 2025.",
   },
   {
-    q: "Puis-je personnaliser le style du script ?",
-    a: "Oui. Choisissez le ton, le format, la langue et collez vos anciens scripts pour que l'IA reproduise votre style personnel.",
+    q: "Puis-je personnaliser le script ?",
+    a: "Oui. Utilisez le champ style personnel dans le dashboard pour que l'IA reproduise votre ton et votre structure habituelle.",
   },
   {
-    q: "Que se passe-t-il si j'atteins ma limite mensuelle ?",
-    a: "Vous pouvez upgrader vers Creator (50 crédits/mois) ou Pro (illimité) à tout moment depuis votre dashboard.",
+    q: "Comment fonctionnent les crédits ?",
+    a: "1 analyse = 1 crédit. Vos crédits sont remis à zéro le 1er de chaque mois selon votre plan.",
   },
   {
-    q: "Mes données sont-elles sécurisées ?",
-    a: "Vos analyses et scripts sont stockés de manière chiffrée. Nous ne partageons jamais vos contenus avec des tiers.",
+    q: "Mes données sont sécurisées ?",
+    a: "Oui. Vos données sont hébergées sur Supabase avec chiffrement en transit et au repos.",
+  },
+  {
+    q: "Puis-je annuler à tout moment ?",
+    a: "Oui, sans engagement. Vous pouvez annuler votre abonnement depuis votre espace de facturation.",
   },
 ];
 
 export default function Home() {
   const router = useRouter();
   const [url, setUrl] = useState("");
-  const [transcript, setTranscript] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const showNonYouTubeMessage = isNonYouTubeUrl(url);
-
-  function handleAnalyze(e: React.FormEvent) {
+  function handleHeroAnalyze(e: React.FormEvent) {
     e.preventDefault();
-    if (!url.trim()) return;
-    const params = new URLSearchParams({ url: url.trim() });
-    if (transcript.trim()) params.set("transcript", transcript.trim());
-    router.push(`/dashboard?${params.toString()}`);
+    router.push("/signup");
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
+      <header className="fixed top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-xl">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg gradient-premium text-sm font-bold text-white">
+              V
+            </span>
+            <span className="text-lg font-semibold tracking-tight">Viralyz</span>
+          </Link>
+          <ul className="hidden items-center gap-8 md:flex">
+            <li>
+              <a href="#how-it-works" className="text-sm text-muted hover:text-foreground">
+                Comment ça marche
+              </a>
+            </li>
+            <li>
+              <a href="#pricing" className="text-sm text-muted hover:text-foreground">
+                Pricing
+              </a>
+            </li>
+            <li>
+              <a href="#faq" className="text-sm text-muted hover:text-foreground">
+                FAQ
+              </a>
+            </li>
+          </ul>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/login"
+              className="rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:text-foreground"
+            >
+              Se connecter
+            </Link>
+            <Link
+              href="/signup"
+              className="btn-animated rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white sm:px-4"
+            >
+              Commencer gratuitement
+            </Link>
+          </div>
+        </nav>
+      </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden px-6 pb-24 pt-16">
+      <section className="relative overflow-hidden px-4 pb-20 pt-28 sm:px-6 sm:pb-24 sm:pt-32">
         <div className="hero-stars" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,58,237,0.15),transparent_50%)]" />
         <div className="relative mx-auto max-w-4xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-sm text-muted">
-            <span className="h-2 w-2 rounded-full bg-secondary animate-pulse" />
-            Propulsé par GPT-4o
+          <div className="badge-populaire mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-sm text-muted">
+            ✨ Propulsé par GPT-4o
           </div>
-          <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-6xl">
-            Comprenez pourquoi une vidéo{" "}
-            <span className="gradient-premium-text">
-              devient virale
-            </span>
+          <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl md:text-6xl">
+            Décryptez pourquoi une vidéo devient virale.{" "}
+            <span className="gradient-premium-text">Créez le script qui reproduit le résultat.</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted">
-            Collez l&apos;URL de votre vidéo. Viralyz analyse les mécanismes viraux et
-            génère un script sur-mesure pour votre niche et votre style.
+          <p className="mx-auto mt-6 max-w-2xl text-base text-muted sm:text-lg">
+            Collez l&apos;URL d&apos;une vidéo YouTube. Viralyz analyse les mécanismes viraux et génère
+            votre script en 30 secondes.
           </p>
-
-          <form
-            onSubmit={handleAnalyze}
-            className="mx-auto mt-10 max-w-2xl space-y-4 text-left"
-          >
-            <div>
-              <label className="text-sm font-medium">URL de votre vidéo</label>
-              <div className="mt-2 flex flex-col gap-3 sm:flex-row">
-                <input
-                  type="url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://youtube.com/watch?v=..."
-                  className="flex-1 rounded-xl border border-border bg-surface px-4 py-3.5 text-sm text-foreground placeholder:text-muted outline-none transition-colors focus:border-accent-light"
-                />
-                <button
-                  type="submit"
-                  className="btn-analyze-hero rounded-xl px-8 py-3.5 text-sm font-semibold text-white"
-                >
-                  Analyze
-                </button>
-              </div>
-              <div className="mt-3">
-                <PlatformSupportBadges />
-              </div>
-            </div>
-
-            {showNonYouTubeMessage && (
-              <>
-                <div className="rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-foreground">
-                  TikTok, Instagram et X arrivent bientôt. En attendant, collez votre transcription ci-dessous.
-                </div>
-                <div>
-                  <textarea
-                    value={transcript}
-                    onChange={(e) => setTranscript(e.target.value)}
-                    placeholder="Collez votre transcription ici..."
-                    rows={4}
-                    className="w-full resize-none rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted outline-none transition-colors focus:border-accent-light"
-                  />
-                </div>
-              </>
-            )}
-          </form>
-
-          <p className="mt-4 text-xs text-muted">
-            2 crédits gratuits par mois — sans carte bancaire
-          </p>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how-it-works" className="border-t border-border px-6 py-24">
-        <div className="mx-auto max-w-6xl">
-          <h2 className="text-center text-3xl font-bold">Comment ça marche</h2>
-          <p className="mx-auto mt-3 max-w-xl text-center text-muted">
-            Trois étapes pour transformer une vidéo virale en contenu à votre image.
-          </p>
-          <div className="mt-16 grid gap-8 md:grid-cols-3">
-            {[
-              {
-                step: "01",
-                title: "Collez l'URL",
-                desc: "Entrez le lien d'une vidéo qui performe dans votre niche — YouTube, TikTok, Instagram ou X.",
-              },
-              {
-                step: "02",
-                title: "Analyse IA",
-                desc: "Notre IA décortique le hook, la rétention, les tags viraux et le score global.",
-              },
-              {
-                step: "03",
-                title: "Script personnalisé",
-                desc: "Recevez un script adapté à votre plateforme, ton et style personnel.",
-              },
-            ].map((item) => (
-              <div
-                key={item.step}
-                className="pricing-card rounded-2xl border border-border bg-surface p-8"
+          <form onSubmit={handleHeroAnalyze} className="mx-auto mt-10 max-w-2xl">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://youtube.com/watch?v=..."
+                className="flex-1 rounded-xl border border-border bg-surface px-4 py-3.5 text-sm outline-none transition-colors focus:border-accent-light"
+              />
+              <button
+                type="submit"
+                className="btn-analyze-hero w-full rounded-xl px-8 py-3.5 text-sm font-semibold text-white sm:w-auto"
               >
-                <span className="text-sm font-mono text-accent">{item.step}</span>
-                <h3 className="mt-4 text-xl font-semibold">{item.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  {item.desc}
-                </p>
-              </div>
-            ))}
+                Analyser gratuitement
+              </button>
+            </div>
+          </form>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm">
+            <span className="rounded-full border border-border bg-surface px-3 py-1">YouTube ✅ Supporté</span>
+            <span className="rounded-full border border-border bg-surface/60 px-3 py-1 text-muted">
+              TikTok 🔜 Bientôt
+            </span>
+            <span className="rounded-full border border-border bg-surface/60 px-3 py-1 text-muted">
+              Instagram 🔜 Bientôt
+            </span>
+          </div>
+          <p className="mt-4 text-xs text-muted">2 analyses gratuites — sans carte bancaire</p>
+          <div className="mt-10 grid gap-4 text-sm text-muted sm:grid-cols-3 sm:gap-6">
+            <div>
+              <p className="text-lg font-bold text-foreground">12 400+</p>
+              <p>scripts générés</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-foreground">87%</p>
+              <p>score viral moyen</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-foreground">4 200+</p>
+              <p>créateurs</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Demo */}
-      <section id="demo" className="border-t border-border px-6 py-24">
+      <section id="demo" className="border-t border-border px-4 py-16 sm:px-6 sm:py-24">
         <div className="mx-auto max-w-6xl">
-          <h2 className="text-center text-3xl font-bold">Exemple de résultat</h2>
-          <p className="mx-auto mt-3 max-w-xl text-center text-muted">
-            Voici ce que Viralyz génère pour une vidéo de productivité à 2M de vues.
-          </p>
-          <div className="mt-12 grid gap-6 lg:grid-cols-2">
-            <div className="pricing-card rounded-2xl border border-border bg-surface p-6">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted">Score viral</span>
-                <span className="text-3xl font-bold gradient-premium-text">87/100</span>
-              </div>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-border">
-                <div className="progress-bar-animated h-full w-[87%] rounded-full gradient-premium" />
-              </div>
-              <div className="mt-6 space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-secondary">Analyse</h4>
-                  <p className="mt-1 text-sm leading-relaxed text-muted">
-                    Hook basé sur une promesse chiffrée (« 10 min/jour ») qui crée
-                    une curiosité immédiate. Structure en 3 actes avec preuve
-                    sociale à mi-parcours. CTA soft qui invite au commentaire sans
-                    friction.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-secondary">
-                    Tags viraux
-                  </h4>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {["#productivité", "#habitudes", "#mindset", "#routine", "#focus"].map(
-                      (tag) => (
-                        <span
-                          key={tag}
-                          className="tag-viral rounded-full border border-border px-3 py-1 text-xs text-muted"
-                        >
-                          {tag}
-                        </span>
-                      )
-                    )}
+          <h2 className="text-center text-2xl font-bold sm:text-3xl">
+            Voici ce que Viralyz génère en 30 secondes
+          </h2>
+          <div className="mt-10 grid gap-6 lg:grid-cols-2">
+            <div className="pricing-card rounded-2xl border border-border bg-surface p-4 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row">
+                <div className="h-28 w-full shrink-0 rounded-lg gradient-premium sm:h-24 sm:w-40" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold">Comment j&apos;ai fait 1M de vues en 30 jours</h3>
+                  <p className="mt-2 text-3xl font-bold text-[#22c55e]">87/100</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {["Pattern interrupt", "Hook émotionnel", "Preuve sociale"].map((tag) => (
+                      <span key={tag} className="tag-viral rounded-full border border-border px-3 py-1 text-xs text-muted">
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
+              <p className="mt-6 text-sm leading-relaxed text-muted">
+                Cette vidéo explose grâce à un hook de 2 secondes qui déclenche immédiatement la
+                curiosité. La promesse chiffrée (« 1M en 30 jours ») crée un gap de connaissance
+                impossible à ignorer.
+              </p>
             </div>
-            <div className="pricing-card rounded-2xl border border-border bg-surface p-6">
-              <h4 className="text-sm font-medium text-secondary">
-                Script généré
-              </h4>
+            <div className="pricing-card rounded-2xl border border-border bg-surface p-4 sm:p-6">
+              <h4 className="text-sm font-medium text-secondary">Extrait de script</h4>
               <pre className="mt-3 whitespace-pre-wrap font-mono text-xs leading-relaxed text-muted">
-{`[Hook — 0:00]
-"Tu perds 2h par jour sans le savoir.
-Voici la règle des 10 minutes."
+{`[Hook]
+"1 million de vues en 30 jours — sans budget pub.
+Voici la règle que personne ne vous dit."
 
-[Acte 1 — 0:05]
-"Avant, je scrollais 3h le matin.
-Puis j'ai testé UNE seule habitude..."
-
-[Acte 2 — 0:25]
-"Résultat après 30 jours :
-→ +40% de focus
-→ Moins de procrastination
-→ Plus d'énergie le soir"
-
-[CTA — 0:45]
-"Commente '10MIN' si tu veux
-ma checklist complète 👇"`}
+[Acte 1]
+"Semaine 1 : j'ai copié les 3 premières secondes
+des vidéos à 10x ma taille d'audience..."`}
               </pre>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="border-t border-border px-6 py-24">
+      <section id="how-it-works" className="border-t border-border px-4 py-16 sm:px-6 sm:py-24">
         <div className="mx-auto max-w-6xl">
-          <h2 className="text-center text-3xl font-bold">Pricing</h2>
-          <p className="mx-auto mt-3 max-w-xl text-center text-muted">
-            Commencez gratuitement, scalez quand vous êtes prêt. 1 analyse = 1 crédit.
-          </p>
-          <div className="mt-12 grid items-center gap-6 md:grid-cols-3">
-            <PricingCard
-              name="Free"
-              price="0€"
-              description="Pour découvrir Viralyz"
-              discrete
-              features={[
-                "2 crédits par mois",
-                "YouTube uniquement",
-                "Format court 30-60s uniquement",
-                "Score viral complet",
-                "Script basique",
-              ]}
-              cta="Commencer gratuitement"
-              href="/signup"
-            />
-            <PricingCard
-              name="Creator"
-              price="19,99€"
-              description="Pour les créateurs actifs"
-              features={[
-                "50 crédits par mois",
-                "YouTube + TikTok/Instagram/X",
-                "Tous les formats (court, moyen, long)",
-                "Analyse ultra-détaillée",
-                "Variantes de hook",
-                "Régénération (1 crédit)",
-                "Score de similarité",
-                "Prévisualisation mobile",
-                "Historique complet",
-                "Support email",
-              ]}
-              highlighted
-              cta="Choisir Creator"
-              href="/signup?plan=creator"
-            />
-            <PricingCard
-              name="Pro"
-              price="39,99€"
-              description="Pour les équipes & agences"
-              features={[
-                "Crédits illimités",
-                "Tout le plan Creator",
-                "Support prioritaire",
-                "Accès API",
-              ]}
-              cta="Choisir Pro"
-              href="/signup?plan=pro"
-            />
+          <h2 className="text-center text-2xl font-bold sm:text-3xl">Comment ça marche</h2>
+          <div className="mt-12 grid gap-6 md:grid-cols-3 md:gap-8">
+            {[
+              {
+                icon: "🔗",
+                title: "Collez l'URL",
+                desc: "Une vidéo YouTube virale dans votre niche",
+              },
+              {
+                icon: "🤖",
+                title: "L'IA analyse tout",
+                desc: "Hook, rétention, CTA, techniques virales, métriques réelles",
+              },
+              {
+                icon: "✍️",
+                title: "Recevez votre script",
+                desc: "Adapté à votre style, prêt à filmer immédiatement",
+              },
+            ].map((step, i) => (
+              <div key={step.title} className="pricing-card rounded-2xl border border-border bg-surface p-6 sm:p-8">
+                <span className="text-2xl">{step.icon}</span>
+                <p className="mt-3 text-sm font-mono text-accent">{String(i + 1).padStart(2, "0")}</p>
+                <h3 className="mt-2 text-xl font-semibold">{step.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{step.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" className="border-t border-border px-6 py-24">
-        <div className="mx-auto max-w-3xl">
-          <h2 className="text-center text-3xl font-bold">FAQ</h2>
-          <div className="mt-12 space-y-3">
-            {faqItems.map((item, i) => (
-              <div
-                key={item.q}
-                className="pricing-card rounded-xl border border-border bg-surface overflow-hidden"
+      <section id="pricing" className="border-t border-border px-4 py-16 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-center text-2xl font-bold sm:text-3xl">Pricing</h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-sm text-muted sm:text-base">
+            1 analyse = 1 crédit. Commencez gratuitement.
+          </p>
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            <div className="pricing-card pricing-card-discrete rounded-2xl border border-border bg-surface p-6">
+              <h3 className="text-lg font-semibold">Free</h3>
+              <p className="mt-2 text-3xl font-bold">0€</p>
+              <p className="mt-1 text-sm text-muted">2 crédits / mois</p>
+              <ul className="mt-6 space-y-2 text-sm text-muted">
+                <li>• YouTube</li>
+                <li>• Format court</li>
+                <li>• Score viral complet</li>
+              </ul>
+              <Link
+                href="/signup"
+                className="btn-animated mt-8 block w-full rounded-xl border border-border py-3 text-center text-sm font-semibold hover:border-accent-light"
               >
+                Commencer
+              </Link>
+            </div>
+            <div className="pricing-card pricing-card-highlighted relative rounded-2xl border-2 border-accent bg-surface p-6">
+              <span className="badge-populaire absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white">
+                ⭐ Populaire
+              </span>
+              <h3 className="text-lg font-semibold">Creator</h3>
+              <p className="mt-2 text-3xl font-bold">14.99€</p>
+              <p className="mt-1 text-sm text-muted">20 crédits / mois</p>
+              <ul className="mt-6 space-y-2 text-sm text-muted">
+                <li>• Toutes plateformes</li>
+                <li>• Tous formats</li>
+                <li>• Hooks alternatifs</li>
+                <li>• Régénération</li>
+              </ul>
+              <Link
+                href="/signup?plan=creator"
+                className="btn-animated mt-8 block w-full rounded-xl gradient-premium py-3 text-center text-sm font-semibold text-white"
+              >
+                Choisir Creator
+              </Link>
+            </div>
+            <div className="pricing-card rounded-2xl border border-border bg-surface p-6">
+              <h3 className="text-lg font-semibold">Pro</h3>
+              <p className="mt-2 text-3xl font-bold">34.99€</p>
+              <p className="mt-1 text-sm text-muted">50 crédits / mois</p>
+              <ul className="mt-6 space-y-2 text-sm text-muted">
+                <li>• Tout Creator</li>
+                <li>• Support prioritaire</li>
+                <li>• Analyses avancées</li>
+              </ul>
+              <Link
+                href="/signup?plan=pro"
+                className="btn-animated mt-8 block w-full rounded-xl border border-accent/50 bg-accent/10 py-3 text-center text-sm font-semibold text-accent-light"
+              >
+                Choisir Pro
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" className="border-t border-border px-4 py-16 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-center text-2xl font-bold sm:text-3xl">FAQ</h2>
+          <div className="mt-10 space-y-3">
+            {faqItems.map((item, i) => (
+              <div key={item.q} className="pricing-card overflow-hidden rounded-xl border border-border bg-surface">
                 <button
                   type="button"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="btn-animated flex w-full items-center justify-between px-6 py-4 text-left text-sm font-medium"
+                  className="btn-animated flex w-full items-center justify-between px-4 py-4 text-left text-sm font-medium sm:px-6"
                 >
                   {item.q}
                   <span className="text-accent">{openFaq === i ? "−" : "+"}</span>
                 </button>
                 {openFaq === i && (
-                  <p className="border-t border-border px-6 py-4 text-sm leading-relaxed text-muted">
+                  <p className="border-t border-border px-4 py-4 text-sm leading-relaxed text-muted sm:px-6">
                     {item.a}
                   </p>
                 )}
@@ -322,29 +307,29 @@ ma checklist complète 👇"`}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border px-6 py-12">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 md:flex-row">
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md gradient-premium text-xs font-bold text-white">
-              V
-            </span>
-            <span className="font-semibold">Viralyz</span>
+      <footer className="border-t border-border px-4 py-10 sm:px-6 sm:py-12">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 text-center md:flex-row md:justify-between md:text-left">
+          <div>
+            <div className="flex items-center justify-center gap-2 md:justify-start">
+              <span className="flex h-7 w-7 items-center justify-center rounded-md gradient-premium text-xs font-bold text-white">
+                V
+              </span>
+              <span className="font-semibold">Viralyz</span>
+            </div>
+            <p className="mt-2 text-sm text-muted">Décryptez le viral. Créez l&apos;irrésistible.</p>
           </div>
-          <p className="text-sm text-muted">
-            © {new Date().getFullYear()} Viralyz. Tous droits réservés.
-          </p>
-          <div className="flex gap-6 text-sm text-muted">
-            <a href="#" className="hover:text-accent-light">
+          <div className="flex flex-wrap justify-center gap-4 text-sm text-muted md:gap-6">
+            <Link href="/legal" className="hover:text-accent-light">
               Mentions légales
-            </a>
-            <a href="#" className="hover:text-accent-light">
+            </Link>
+            <Link href="/privacy" className="hover:text-accent-light">
               Confidentialité
-            </a>
-            <a href="mailto:hello@viralyz.app" className="hover:text-accent-light">
+            </Link>
+            <a href="mailto:hello@viralyz.io" className="hover:text-accent-light">
               Contact
             </a>
           </div>
+          <p className="text-sm text-muted">© 2025 Viralyz</p>
         </div>
       </footer>
     </div>
