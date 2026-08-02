@@ -15,6 +15,7 @@ import AnalysisLoadingPanel from "@/components/dashboard/AnalysisLoadingPanel";
 import ViralScoreCircle from "@/components/dashboard/ViralScoreCircle";
 import VideoMetadataCard from "@/components/dashboard/VideoMetadataCard";
 import UpgradeSuccessModal from "@/components/dashboard/UpgradeSuccessModal";
+import { XPNotification } from "@/components/XPNotification";
 import { formatRelativeDate } from "@/lib/dashboard-utils";
 
 const ALL_PLATFORMS = ["TikTok", "YouTube Shorts", "Instagram Reels", "X"] as const;
@@ -341,6 +342,7 @@ export default function DashboardPage() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
+  const [xpNotif, setXpNotif] = useState<{ xp: number; badge?: { emoji: string; label: string } } | null>(null);
 
   function showCopyToast() {
     setToastVisible(true);
@@ -433,6 +435,15 @@ const data = JSON.parse(text);
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ xp: 10, type: "analysis" }),
+      }).then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          if (data.newBadges?.length > 0) {
+            setXpNotif({ xp: 10, badge: { emoji: data.newBadges[0].emoji, label: data.newBadges[0].label } });
+          } else {
+            setXpNotif({ xp: 10 });
+          }
+        }
       }).catch(() => {});
     } catch { setError("Impossible de contacter le serveur."); }
     finally { setLoading(false); }
@@ -765,6 +776,7 @@ const data = JSON.parse(text);
           </section>
         )}
       </main>
+      {xpNotif && <XPNotification xp={xpNotif.xp} badge={xpNotif.badge} onClose={() => setXpNotif(null)} />}
     </div>
   );
 }

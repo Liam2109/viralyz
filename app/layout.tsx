@@ -28,6 +28,13 @@ export default function RootLayout({
   lang="fr"
   className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
 >
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#7C3AED" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Viralyz" />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

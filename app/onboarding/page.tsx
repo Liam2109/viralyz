@@ -165,6 +165,11 @@ export default function OnboardingPage() {
     setStep((s) => Math.min(s + 1, STEPS));
   }
 
+  function goPrev() {
+    setSlideDir("left");
+    setStep((s) => Math.max(s - 1, 1));
+  }
+
   function canProceed(): boolean {
     switch (step) {
       case 1: return !!data.experience;
@@ -242,7 +247,7 @@ export default function OnboardingPage() {
       <div className="mx-auto flex min-h-screen max-w-lg flex-col px-4 pt-24 pb-8">
         <div
           key={step}
-          className={`flex flex-1 flex-col animate-fade-up ${slideDir === "right" ? "" : ""}`}
+          className={`flex flex-1 flex-col onboarding-step ${slideDir === "right" ? "" : ""}`}
         >
           {step === 1 && (
             <div className="flex flex-1 flex-col">
@@ -414,13 +419,22 @@ export default function OnboardingPage() {
           )}
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          {step > 1 && step < STEPS && (
+            <button
+              type="button"
+              onClick={goPrev}
+              className="btn-full-mobile w-full rounded-xl border border-[#1E1E2E] bg-[#13131A] px-6 py-4 text-base font-semibold text-[#8B8B9E] transition-opacity hover:border-[#7C3AED]/50 hover:text-[#F8F8FF] sm:w-auto"
+            >
+              Précédent
+            </button>
+          )}
           {step < STEPS ? (
             <button
               type="button"
               onClick={goNext}
               disabled={!canProceed()}
-              className="w-full rounded-xl bg-[#7C3AED] px-6 py-4 text-base font-semibold text-white transition-opacity hover:bg-[#6D28D9] disabled:opacity-40"
+              className="btn-full-mobile w-full rounded-xl bg-[#7C3AED] px-6 py-4 text-base font-semibold text-white transition-opacity hover:bg-[#6D28D9] disabled:opacity-40 sm:flex-1"
             >
               Suivant
             </button>
@@ -429,7 +443,7 @@ export default function OnboardingPage() {
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="w-full rounded-xl bg-[#7C3AED] px-6 py-4 text-base font-semibold text-white transition-opacity hover:bg-[#6D28D9] disabled:opacity-50"
+              className="btn-full-mobile w-full rounded-xl bg-[#7C3AED] px-6 py-4 text-base font-semibold text-white transition-opacity hover:bg-[#6D28D9] disabled:opacity-50 sm:flex-1"
             >
               {submitting ? "Chargement..." : "Commencer mon aventure →"}
             </button>

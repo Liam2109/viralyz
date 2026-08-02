@@ -329,3 +329,62 @@ body {
 .report-markdown strong {
   color: #F8F8FF;
 }
+
+/* Mobile responsive fixes */
+@media (max-width: 640px) {
+  .dashboard-grid { grid-template-columns: 1fr !important; }
+  .pricing-grid { grid-template-columns: 1fr !important; }
+  .score-grid { grid-template-columns: 1fr !important; }
+  .hooks-grid { grid-template-columns: 1fr !important; }
+  .btn-full-mobile { width: 100% !important; }
+  .hide-mobile { display: none !important; }
+  .text-hero { font-size: 1.75rem !important; line-height: 1.2 !important; }
+  .px-mobile { padding-left: 1rem !important; padding-right: 1rem !important; }
+}
+
+/* Smooth scrolling */
+html { scroll-behavior: smooth; }
+
+/* Better tap targets mobile */
+@media (max-width: 640px) {
+  button, a { min-height: 44px; }
+  input, textarea, select { font-size: 16px !important; }
+}
+
+/* XP notification animation */
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.xp-notification {
+  animation: slideUp 0.3s ease forwards;
+}
+
+/* Onboarding slide animation */
+@keyframes slideIn {
+  from { transform: translateX(30px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.onboarding-step {
+  animation: slideIn 0.3s ease forwards;
+}
+
+/* Heatmap colors */
+.heatmap-0 { background: #1E1E2E; }
+.heatmap-1 { background: #4C1D95; }
+.heatmap-2 { background: #6D28D9; }
+.heatmap-3 { background: #7C3AED; }
+.heatmap-4 { background: #9F67FF; }
+
+/* Profile badge shine */
+@keyframes badgeShine {
+  0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+}
+
+.badge-new {
+  animation: badgeShine 2s infinite;
+}
