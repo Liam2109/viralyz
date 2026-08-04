@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getSupabase } from "@/lib/supabase";
-import { Turnstile } from "@marsidev/react-turnstile";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -12,30 +11,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [turnstileToken, setTurnstileToken] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
-
-    if (!turnstileToken) {
-      setError("Vérification anti-bot requise.");
-      setLoading(false);
-      return;
-    }
-
-    const verifyRes = await fetch("/api/auth/verify-turnstile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: turnstileToken }),
-    });
-    const verifyData = await verifyRes.json();
-    if (!verifyData.success) {
-      setError("Vérification anti-bot échouée. Réessayez.");
-      setLoading(false);
-      return;
-    }
 
     const { error: authError } = await getSupabase().auth.signInWithPassword({
       email,
@@ -109,16 +89,9 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="mt-4 flex justify-center">
-            <Turnstile
-              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
-              onSuccess={(token) => setTurnstileToken(token)}
-            />
-          </div>
-
           <button
             type="submit"
-            disabled={loading || !turnstileToken}
+            disabled={loading}
             className="mt-6 w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "Se connecter..." : "Se connecter"}
