@@ -4,47 +4,25 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getSupabase } from "@/lib/supabase";
-import { Turnstile } from "@marsidev/react-turnstile";
 
 export default function SignupPage() {
   const searchParams = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [niche, setNiche] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [turnstileToken, setTurnstileToken] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    if (!turnstileToken) {
-      setError("Vérification anti-bot requise.");
-      setLoading(false);
-      return;
-    }
-
-    // Vérification Turnstile côté serveur
-    const verifyRes = await fetch("/api/auth/verify-turnstile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: turnstileToken }),
-    });
-    const verifyData = await verifyRes.json();
-    if (!verifyData.success) {
-      setError("Vérification anti-bot échouée. Réessayez.");
-      setLoading(false);
-      return;
-    }
-
     const { error: authError } = await getSupabase().auth.signUp({
       email,
       password,
       options: {
-        data: { name, niche: niche.trim() || undefined },
+        data: { name },
       },
     });
 
@@ -62,7 +40,6 @@ export default function SignupPage() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
-      // Envoie l'email de bienvenue
       await fetch("/api/auth/welcome-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,7 +78,7 @@ export default function SignupPage() {
             <span className="text-xl font-semibold text-foreground">Viralyz</span>
           </Link>
           <h1 className="mt-8 text-2xl font-bold text-foreground">Créer un compte</h1>
-          <p className="mt-2 text-sm text-muted">2 crédits gratuits par mois — sans carte bancaire.</p>
+          <p className="mt-2 text-sm text-muted">2 analyses gratuites par mois — sans carte bancaire.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 rounded-2xl border border-border bg-surface p-8">
@@ -124,31 +101,15 @@ export default function SignupPage() {
           </div>
 
           <div className="mt-4">
-            <label htmlFor="niche" className="text-sm font-medium text-muted">
-              Votre niche principale <span className="text-xs text-muted/70">(optionnel)</span>
-            </label>
-            <input id="niche" type="text" value={niche} onChange={(e) => setNiche(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
-              placeholder="ex: productivité, fitness, finance..." />
-          </div>
-
-          <div className="mt-4">
             <label htmlFor="password" className="text-sm font-medium text-muted">Mot de passe</label>
             <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6}
               className="mt-1.5 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"
               placeholder="Min. 6 caractères" />
           </div>
 
-          <div className="mt-4 flex justify-center">
-            <Turnstile
-              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
-              onSuccess={(token) => setTurnstileToken(token)}
-            />
-          </div>
-
-          <button type="submit" disabled={loading || !turnstileToken}
+          <button type="submit" disabled={loading}
             className="mt-6 w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white btn-animated disabled:opacity-50">
-            {loading ? "Création..." : "Start free"}
+            {loading ? "Création..." : "Commencer gratuitement"}
           </button>
         </form>
 
