@@ -88,6 +88,21 @@ export default function LoginPage() {
               placeholder="••••••••"
             />
           </div>
+          <div className="mt-1 flex justify-end">
+  <button
+    type="button"
+    onClick={async () => {
+      if (!email) { setError("Entre ton email d'abord."); return; }
+      await getSupabase().auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      setError("Email de réinitialisation envoyé !");
+    }}
+    className="text-xs text-accent hover:underline"
+  >
+    Mot de passe oublié ?
+  </button>
+</div>
 
           <button
             type="submit"
