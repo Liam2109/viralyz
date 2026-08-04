@@ -13,14 +13,7 @@ function getSupabaseAnonKey() {
 }
 
 export function createBrowserSupabaseClient() {
-  return createBrowserClient(getSupabaseUrl(), getSupabaseAnonKey(), {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-      storageKey: "viralyz-auth",
-    },
-  });
+  return createBrowserClient(getSupabaseUrl(), getSupabaseAnonKey());
 }
 
 export function createMiddlewareSupabaseClient(
