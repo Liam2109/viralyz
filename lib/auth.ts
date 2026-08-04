@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js"
 import { prisma } from "./prisma"
+
 type Plan = "FREE" | "CREATOR" | "PRO"
 
 export async function getAuthUser(request: Request) {
@@ -30,14 +31,41 @@ export async function getOrCreateDbUser(supabaseUser: {
   const email = supabaseUser.email
   if (!email) return null
 
-  return prisma.user.upsert({
+  // Cherche d'abord par supabaseId
+  const existingById = await prisma.user.findUnique({
     where: { supabaseId: supabaseUser.id },
-    update: {
-      email,
-      name: supabaseUser.user_metadata?.name ?? undefined,
-      niche: supabaseUser.user_metadata?.niche ?? undefined,
-    },
-    create: {
+  })
+
+  if (existingById) {
+    return prisma.user.update({
+      where: { supabaseId: supabaseUser.id },
+      data: {
+        email,
+        name: supabaseUser.user_metadata?.name ?? undefined,
+        niche: supabaseUser.user_metadata?.niche ?? undefined,
+      },
+    })
+  }
+
+  // Cherche par email
+  const existingByEmail = await prisma.user.findUnique({
+    where: { email },
+  })
+
+  if (existingByEmail) {
+    return prisma.user.update({
+      where: { email },
+      data: {
+        supabaseId: supabaseUser.id,
+        name: supabaseUser.user_metadata?.name ?? undefined,
+        niche: supabaseUser.user_metadata?.niche ?? undefined,
+      },
+    })
+  }
+
+  // Crée un nouveau user
+  return prisma.user.create({
+    data: {
       supabaseId: supabaseUser.id,
       email,
       name: supabaseUser.user_metadata?.name ?? null,
@@ -122,7 +150,6 @@ export async function fetchYouTubeData(videoUrl: string): Promise<YouTubeVideoDa
   const stats = item.statistics
   const details = item.contentDetails
 
-  // Convertir la durée ISO 8601 en format lisible
   const duration = details?.duration ?? "PT0S"
   const match2 = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
   const hours = parseInt(match2?.[1] ?? "0")
@@ -146,7 +173,6 @@ export async function fetchYouTubeData(videoUrl: string): Promise<YouTubeVideoDa
   }
 }
 
-// Garde la compatibilité avec l'ancien code
 export async function fetchYouTubeTitle(videoUrl: string): Promise<string | null> {
   const data = await fetchYouTubeData(videoUrl)
   return data?.title ?? null
