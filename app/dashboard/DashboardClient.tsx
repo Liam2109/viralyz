@@ -149,13 +149,10 @@ function getCreditsBarColor(pct: number): string {
 function FreePlanBanner() {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm">Vous avez 2 crédits gratuits ce mois — passez au plan Creator pour en avoir 50</p>
-     <Link
-  href="/dashboard/pricing"
-  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
->
-  Upgrader
-</Link>
+      <p className="text-sm">Vous avez 2 crédits gratuits ce mois — passez au plan Creator pour en avoir 20</p>
+      <Link href="/dashboard/pricing" className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center">
+        Upgrader
+      </Link>
     </div>
   );
 }
@@ -164,10 +161,7 @@ function CreatorUpgradeBanner() {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-muted">Passez au Pro — 50 analyses — 34.99€/mois</p>
-      <Link
-        href="/dashboard/pricing"
-        className="btn-animated w-full rounded-lg border border-accent/50 bg-accent/10 px-4 py-2 text-center text-sm font-semibold text-accent-light sm:w-auto"
-      >
+      <Link href="/dashboard/pricing" className="btn-animated w-full rounded-lg border border-accent/50 bg-accent/10 px-4 py-2 text-center text-sm font-semibold text-accent-light sm:w-auto">
         Voir Pro
       </Link>
     </div>
@@ -324,12 +318,12 @@ export default function DashboardPage() {
   const searchParams = useSearchParams();
   const [videoUrl, setVideoUrl] = useState("");
   const [transcript, setTranscript] = useState("");
-  const [platform, setPlatform] = useState<string>("YouTube Shorts");
-  const [tone, setTone] = useState<string>(TONES[0]);
-  const [format, setFormat] = useState<string>(FORMATS[0]);
-  const [outputFormat, setOutputFormat] = useState<string>(OUTPUT_FORMATS[0].value);
-  const [language, setLanguage] = useState<string>(LANGUAGES[0]);
-  const [niche, setNiche] = useState("");
+  const [platform] = useState<string>("YouTube Shorts");
+  const [tone] = useState<string>(TONES[0]);
+  const [format] = useState<string>(FORMATS[0]);
+  const [outputFormat] = useState<string>(OUTPUT_FORMATS[0].value);
+  const [language] = useState<string>(LANGUAGES[0]);
+  const [niche] = useState("");
   const [personalStyle, setPersonalStyle] = useState("");
   const [loading, setLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
@@ -338,7 +332,6 @@ export default function DashboardPage() {
   const [history, setHistory] = useState<AnalysisResult[]>([]);
   const [quota, setQuota] = useState<QuotaInfo | null>(null);
   const [userEmail, setUserEmail] = useState("");
-  const [formatLockMessage, setFormatLockMessage] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
@@ -362,7 +355,7 @@ export default function DashboardPage() {
   }
 
   const isFreePlan = quota?.plan === "FREE";
-  const availablePlatforms = isFreePlan ? FREE_PLATFORMS : ALL_PLATFORMS;
+
   const detectedPlatform = detectPlatformFromUrl(videoUrl);
   const showNonYouTubeMessage = isNonYouTubeUrl(videoUrl);
 
@@ -370,8 +363,8 @@ export default function DashboardPage() {
     const res = await fetch("/api/analyze", { headers: { Authorization: `Bearer ${token}` } });
     if (res.ok) {
       const text = await res.text();
-if (!text) { alert("Erreur serveur vide"); return; }
-const data = JSON.parse(text);
+      if (!text) return;
+      const data = JSON.parse(text);
       setHistory((data.history ?? []).map(enrichResult));
       setQuota(data.quota ?? null);
     }
@@ -382,10 +375,12 @@ const data = JSON.parse(text);
     const transcriptParam = searchParams.get("transcript");
     if (urlParam) setVideoUrl(urlParam);
     if (transcriptParam) setTranscript(transcriptParam);
+
     getSupabase().auth.getSession().then(async ({ data: { session } }) => {
       if (session?.access_token) {
         setUserEmail(session.user.email ?? "");
-        fetchHistory(session.access_token);
+
+        // Vérifie onboarding EN PREMIER
         const profileRes = await fetch("/api/profile", {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
@@ -393,18 +388,15 @@ const data = JSON.parse(text);
           const profileData = await profileRes.json();
           if (!profileData.profile || profileData.profile.onboardingDone === false) {
             window.location.href = "/onboarding";
+            return;
           }
         }
+
+        // Ensuite charge l'historique
+        fetchHistory(session.access_token);
       }
     });
   }, [searchParams, fetchHistory]);
-
-  useEffect(() => {
-    if (isFreePlan) {
-      setPlatform("YouTube Shorts");
-      setOutputFormat("Court");
-    }
-  }, [isFreePlan]);
 
   async function handleAnalyze(e: React.FormEvent) {
     e.preventDefault();
@@ -471,11 +463,9 @@ const data = JSON.parse(text);
     finally { setRegenerating(false); }
   }
 
-  const selectClass = "w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-accent-light";
   const inputClass = "w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent-light";
   const details = result?.details;
   const scriptSections = result ? parseScriptSections(result.script) : [];
-
   const reportMarkdown = details?.fullReport ?? result?.whyViral ?? "";
 
   return (
@@ -490,9 +480,7 @@ const data = JSON.parse(text);
           </Link>
           <div className="flex items-center gap-3 sm:gap-4">
             {quota?.plan === "PRO" && (
-              <span className="rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-semibold text-accent-light">
-                Plan Pro ✨
-              </span>
+              <span className="rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-semibold text-accent-light">Plan Pro ✨</span>
             )}
             <Link href="/profile" className="text-sm text-muted hover:text-accent-light">Mon profil</Link>
             {userEmail && <span className="hidden text-sm text-muted sm:inline">{userEmail}</span>}
@@ -506,14 +494,11 @@ const data = JSON.parse(text);
           {quota?.plan === "CREATOR" && <CreatorUpgradeBanner />}
           {quota?.plan === "FREE" && <FreePlanBanner />}
           {quota && <CreditsBar quota={quota} />}
-          {quota?.plan !== "FREE" && (
+          {quota?.plan !== "FREE" && quota?.plan !== "CREATOR" && (
             <div className="flex justify-end">
-              <Link
-  href="/dashboard/pricing"
-  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
->
-  Upgrader
-</Link>
+              <Link href="/dashboard/pricing" className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center">
+                Upgrader
+              </Link>
             </div>
           )}
         </section>
@@ -521,113 +506,45 @@ const data = JSON.parse(text);
         {loading ? (
           <AnalysisLoadingPanel />
         ) : (
-        <form onSubmit={handleAnalyze} className="space-y-8">
-          <section className="rounded-2xl border border-border bg-surface p-4 space-y-4 sm:p-6">
-            <h2 className="text-lg font-semibold">Analyser une vidéo</h2>
-            <div>
-              <label className="text-sm font-medium">URL de votre vidéo</label>
-              <div className="mt-2 flex items-center gap-3">
-                <input type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." required className={`flex-1 ${inputClass}`} />
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background">
-                  <PlatformIconSingle platform={detectedPlatform} className="h-5 w-5" />
+          <form onSubmit={handleAnalyze} className="space-y-6">
+            <section className="rounded-2xl border border-border bg-surface p-4 space-y-4 sm:p-6">
+              <h2 className="text-lg font-semibold">Analyser une vidéo</h2>
+              <div>
+                <label className="text-sm font-medium">URL de votre vidéo</label>
+                <div className="mt-2 flex items-center gap-3">
+                  <input type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." required className={`flex-1 ${inputClass}`} />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background">
+                    <PlatformIconSingle platform={detectedPlatform} className="h-5 w-5" />
+                  </div>
                 </div>
+                {detectedPlatform && (
+                  <p className="mt-1.5 text-xs text-muted">Plateforme détectée : {PLATFORM_LABELS[detectedPlatform]}{detectedPlatform === "youtube" && " — analyse automatique"}</p>
+                )}
               </div>
-              {detectedPlatform && (
-                <p className="mt-1.5 text-xs text-muted">Plateforme détectée : {PLATFORM_LABELS[detectedPlatform]}{detectedPlatform === "youtube" && " — analyse automatique"}</p>
+              {showNonYouTubeMessage && (
+                <>
+                  <div className="rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm">TikTok, Instagram et X arrivent bientôt. En attendant, collez votre transcription ci-dessous.</div>
+                  <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} placeholder="Collez votre transcription ici..." rows={5} className={`resize-none ${inputClass}`} />
+                </>
               )}
-            </div>
-            {showNonYouTubeMessage && (
-              <>
-                <div className="rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm">TikTok, Instagram et X arrivent bientôt. En attendant, collez votre transcription ci-dessous.</div>
-                <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} placeholder="Collez votre transcription ici..." rows={5} className={`resize-none ${inputClass}`} />
-              </>
-            )}
-            <AccordionItem title="✨ Style personnel (optionnel)" defaultOpen={false}>
-              <textarea value={personalStyle} onChange={(e) => setPersonalStyle(e.target.value)} placeholder="Collez 3 exemples de vos anciens scripts pour que l'IA imite votre style..." rows={5} className={`w-full resize-none ${inputClass}`} />
-            </AccordionItem>
-          </section>
+              <AccordionItem title="✨ Style personnel (optionnel)" defaultOpen={false}>
+                <textarea value={personalStyle} onChange={(e) => setPersonalStyle(e.target.value)} placeholder="Collez 3 exemples de vos anciens scripts pour que l'IA imite votre style..." rows={5} className={`w-full resize-none ${inputClass}`} />
+              </AccordionItem>
+            </section>
 
-          <div className="hidden" aria-hidden="true">
-          <section className="rounded-2xl border border-border bg-surface p-6 space-y-3">
-            <h2 className="text-lg font-semibold">Format de sortie</h2>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {OUTPUT_FORMATS.map((f) => {
-                const isLocked = isFreePlan && f.value !== "Court";
-                return (
-                  <button key={f.value} type="button" onClick={() => { if (isLocked) { setFormatLockMessage("Format moyen et long disponibles dès le plan Creator"); return; } setFormatLockMessage(""); setOutputFormat(f.value); }}
-                    className={`rounded-xl border p-4 text-left transition-colors ${isLocked ? "cursor-not-allowed border-border/60 bg-background/50 opacity-60" : outputFormat === f.value ? "border-accent-light bg-accent/10" : "border-border bg-background hover:border-accent/40"}`}>
-                    <p className="text-sm font-semibold">{f.label}{isLocked && " 🔒"}</p>
-                    <p className="mt-1 text-xs text-muted">{f.desc}</p>
-                  </button>
-                );
-              })}
+            <div className="flex justify-center">
+              <button type="submit" disabled={loading} className="btn-analyze-pulse btn-analyze-main w-full rounded-2xl px-10 py-4 text-base font-bold text-white disabled:opacity-50 sm:w-auto">
+                Analyser
+              </button>
             </div>
-            {formatLockMessage && <p className="text-xs text-orange-400">{formatLockMessage}</p>}
-          </section>
-
-          <section className="grid gap-4 grid-cols-2">
-            <div>
-              <label className="text-sm font-medium text-muted">Plateforme</label>
-              <select value={platform} onChange={(e) => setPlatform(e.target.value)} className={`mt-1.5 ${selectClass}`}>
-                {availablePlatforms.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-              {isFreePlan && (
-                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs text-muted">TikTok, Instagram et X disponibles dès le plan Creator</p>
-              <Link
-  href="/dashboard/pricing"
-  className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center"
->
-  Upgrader
-</Link>
-                </div>
-              )}
-            </div>
-            <div>
-              <label className="text-sm font-medium text-muted">Ton</label>
-              <select value={tone} onChange={(e) => setTone(e.target.value)} className={`mt-1.5 ${selectClass}`}>
-                {TONES.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-muted">Format narratif</label>
-              <select value={format} onChange={(e) => setFormat(e.target.value)} className={`mt-1.5 ${selectClass}`}>
-                {FORMATS.map((f) => <option key={f} value={f}>{f}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-muted">Langue</label>
-              <select value={language} onChange={(e) => setLanguage(e.target.value)} className={`mt-1.5 ${selectClass}`}>
-                {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
-              </select>
-            </div>
-          </section>
-
-          <section className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-muted">Niche</label>
-              <input type="text" value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="ex: productivité, fitness, finance..." className={`mt-1.5 ${inputClass}`} />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-muted">Style personnel</label>
-              <textarea value={personalStyle} onChange={(e) => setPersonalStyle(e.target.value)} placeholder="Collez 3 exemples de vos anciens scripts pour que l'IA imite votre style..." rows={5} className={`mt-1.5 resize-none ${inputClass}`} />
-            </div>
-          </section>
-          </div>
-
-          <div className="flex justify-center">
-            <button type="submit" disabled={loading} className="btn-analyze-pulse btn-analyze-main w-full rounded-2xl px-10 py-4 text-base font-bold text-white disabled:opacity-50 sm:w-auto">
-              {loading ? "Analyse en cours..." : "Analyser"}
-            </button>
-          </div>
-        </form>
+          </form>
         )}
 
         {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</div>}
 
         {result && (
           <section className="animate-fade-up space-y-6">
-            <h2 className="text-xl font-semibold">Résultat de l'analyse</h2>
+            <h2 className="text-xl font-semibold">Résultat de l&apos;analyse</h2>
             <VideoMetadataCard
               thumbnail={details?.thumbnail}
               videoTitle={result.videoTitle}
@@ -643,8 +560,8 @@ const data = JSON.parse(text);
             <div className="rounded-2xl border border-border bg-surface p-6">
               <ViralScoreCircle score={result.viralScore} />
             </div>
-            {(reportMarkdown) && (
-              <div className="report-markdown rounded-xl border border-[#1E1E2E] bg-[#13131A] p-6 sm:p-[24px]">
+            {reportMarkdown && (
+              <div className="report-markdown rounded-xl border border-[#1E1E2E] bg-[#13131A] p-6">
                 <h4 className="mb-3 text-sm font-medium text-secondary">Rapport d&apos;analyse</h4>
                 <ReactMarkdown>{reportMarkdown}</ReactMarkdown>
               </div>
@@ -660,13 +577,6 @@ const data = JSON.parse(text);
               </div>
             )}
             <div className="rounded-2xl border border-border bg-surface p-6 space-y-6">
-              <div className="hidden text-center" aria-hidden="true">
-                <p className="text-sm text-muted">Score viral</p>
-                <p className="mt-1 text-5xl font-bold"><AnimatedCounter value={result.viralScore} /><span className="text-2xl text-muted">/100</span></p>
-                <div className="mx-auto mt-4 h-3 max-w-md overflow-hidden rounded-full bg-border">
-                  <div className={`progress-bar-animated h-full rounded-full ${getScoreColor(result.viralScore)}`} style={{ width: `${result.viralScore}%` }} />
-                </div>
-              </div>
               <div className="space-y-4">
                 <ScoreBar label="Hook" score={result.hookStrength} explanation={details?.hookExplanation} />
                 <ScoreBar label="Rétention" score={result.retentionScore} explanation={details?.retentionExplanation} />
@@ -691,9 +601,9 @@ const data = JSON.parse(text);
                 <AccordionItem title="Points faibles identifiés">
                   {details?.weakPoints?.length ? (
                     <ul className="list-disc pl-4 space-y-1">{details.weakPoints.map((p, i) => <li key={i}>{p}</li>)}</ul>
-                  ) : <p>{result.improvements && !details ? result.improvements : "Non disponible"}</p>}
+                  ) : <p>Non disponible</p>}
                 </AccordionItem>
-                <AccordionItem title="Opportunités d'amélioration">
+                <AccordionItem title="Opportunités d&apos;amélioration">
                   {details?.opportunities?.length ? (
                     <ul className="list-disc pl-4 space-y-1">{details.opportunities.map((p, i) => <li key={i}>{p}</li>)}</ul>
                   ) : <p>Aucune suggestion disponible.</p>}
@@ -732,13 +642,13 @@ const data = JSON.parse(text);
                 <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                   {result.similarityScore != null && (
                     <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${getSimilarityBadgeColor(result.similarityScore)}`}>
-                      Similarité avec votre style : {result.similarityScore}%
+                      Similarité : {result.similarityScore}%
                     </span>
                   )}
-                  <button type="button" onClick={() => setShowMobilePreview(true)} className="btn-animated rounded-lg border border-border px-3 py-1.5 text-xs text-muted hover:border-accent-light hover:text-foreground">Voir sur mobile</button>
-                  <button type="button" onClick={handleRegenerate} disabled={regenerating} className="btn-animated inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted hover:border-accent-light hover:text-foreground disabled:opacity-50">
+                  <button type="button" onClick={() => setShowMobilePreview(true)} className="btn-animated rounded-lg border border-border px-3 py-1.5 text-xs text-muted hover:border-accent-light">Voir sur mobile</button>
+                  <button type="button" onClick={handleRegenerate} disabled={regenerating} className="btn-animated inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted hover:border-accent-light disabled:opacity-50">
                     <RefreshIcon className={`h-3.5 w-3.5 ${regenerating ? "animate-spin" : ""}`} />
-                    {regenerating ? "Génération..." : "Régénérer une variante"}
+                    {regenerating ? "Génération..." : "Régénérer"}
                   </button>
                 </div>
               </div>
@@ -756,22 +666,22 @@ const data = JSON.parse(text);
               {history.slice(0, 5).map((item) => {
                 const thumb = getHistoryThumbnail(item.improvements);
                 return (
-                <button key={item.id} type="button" onClick={() => setResult(enrichResult(item))}
-                  className="pricing-card flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-accent-light">
-                  {thumb && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={thumb} alt="" className="hidden h-12 w-20 shrink-0 rounded-md object-cover sm:block" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{item.videoTitle ?? "Analyse vidéo"}</p>
-                    <p className="mt-0.5 text-xs text-muted">{formatRelativeDate(item.createdAt)}</p>
-                  </div>
-                  <div className="ml-0 shrink-0 text-right sm:ml-3">
-                    <span className={`inline-block h-2 w-2 rounded-full ${getScoreColor(item.viralScore)}`} />
-                    <p className="text-lg font-bold text-accent">{item.viralScore}</p>
-                  </div>
-                </button>
-              );})}
+                  <button key={item.id} type="button" onClick={() => setResult(enrichResult(item))}
+                    className="pricing-card flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-accent-light">
+                    {thumb && (
+                      <img src={thumb} alt="" className="hidden h-12 w-20 shrink-0 rounded-md object-cover sm:block" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{item.videoTitle ?? "Analyse vidéo"}</p>
+                      <p className="mt-0.5 text-xs text-muted">{formatRelativeDate(item.createdAt)}</p>
+                    </div>
+                    <div className="ml-0 shrink-0 text-right sm:ml-3">
+                      <span className={`inline-block h-2 w-2 rounded-full ${getScoreColor(item.viralScore)}`} />
+                      <p className="text-lg font-bold text-accent">{item.viralScore}</p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </section>
         )}
