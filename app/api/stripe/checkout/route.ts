@@ -35,18 +35,19 @@ export async function GET(request: NextRequest) {
 
   const origin = request.nextUrl.origin;
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer: dbUser.stripeCustomerId ?? undefined,
-    customer_email: dbUser.stripeCustomerId ? undefined : dbUser.email,
-    line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
-    success_url: `${origin}/dashboard?upgraded=true`,
-    cancel_url: `${origin}/dashboard?cancelled=true`,
-    metadata: {
-      supabaseId: dbUser.supabaseId,
-      plan: PLAN_MAP[plan],
-    },
-  });
+ const session = await stripe.checkout.sessions.create({
+  mode: "subscription",
+  customer: dbUser.stripeCustomerId ?? undefined,
+  customer_email: dbUser.stripeCustomerId ? undefined : dbUser.email,
+  line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
+  discounts: plan === "creator" ? [{ coupon: process.env.STRIPE_FIRST_MONTH_COUPON_ID! }] : [],
+  success_url: `${origin}/dashboard?upgraded=true`,
+  cancel_url: `${origin}/dashboard?cancelled=true`,
+  metadata: {
+    supabaseId: dbUser.supabaseId,
+    plan: PLAN_MAP[plan],
+  },
+});
 
   if (!session.url) {
     return NextResponse.json({ error: "Erreur Stripe." }, { status: 500 });
@@ -75,18 +76,19 @@ export async function POST(request: NextRequest) {
 
     const origin = request.headers.get("origin") ?? "http://localhost:3000";
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: dbUser.stripeCustomerId ?? undefined,
-      customer_email: dbUser.stripeCustomerId ? undefined : dbUser.email,
-      line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
-      success_url: `${origin}/dashboard?upgraded=true`,
-      cancel_url: `${origin}/dashboard?cancelled=true`,
-      metadata: {
-        supabaseId: dbUser.supabaseId,
-        plan: PLAN_MAP[plan],
-      },
-    });
+   const session = await stripe.checkout.sessions.create({
+  mode: "subscription",
+  customer: dbUser.stripeCustomerId ?? undefined,
+  customer_email: dbUser.stripeCustomerId ? undefined : dbUser.email,
+  line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
+  discounts: plan === "creator" ? [{ coupon: process.env.STRIPE_FIRST_MONTH_COUPON_ID! }] : [],
+  success_url: `${origin}/dashboard?upgraded=true`,
+  cancel_url: `${origin}/dashboard?cancelled=true`,
+  metadata: {
+    supabaseId: dbUser.supabaseId,
+    plan: PLAN_MAP[plan],
+  },
+});
 
     return NextResponse.json({ url: session.url });
 
