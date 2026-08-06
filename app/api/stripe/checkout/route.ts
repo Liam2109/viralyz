@@ -40,7 +40,9 @@ export async function GET(request: NextRequest) {
   customer: dbUser.stripeCustomerId ?? undefined,
   customer_email: dbUser.stripeCustomerId ? undefined : dbUser.email,
   line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
-  discounts: plan === "creator" ? [{ coupon: process.env.STRIPE_FIRST_MONTH_COUPON_ID! }] : [],
+discounts: plan === "creator" && !dbUser.stripeCustomerId
+  ? [{ coupon: process.env.STRIPE_FIRST_MONTH_COUPON_ID! }]
+  : [],
   success_url: `${origin}/dashboard?upgraded=true`,
   cancel_url: `${origin}/dashboard?cancelled=true`,
   metadata: {
@@ -80,8 +82,10 @@ export async function POST(request: NextRequest) {
   mode: "subscription",
   customer: dbUser.stripeCustomerId ?? undefined,
   customer_email: dbUser.stripeCustomerId ? undefined : dbUser.email,
-  line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
-  discounts: plan === "creator" ? [{ coupon: process.env.STRIPE_FIRST_MONTH_COUPON_ID! }] : [],
+ line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
+discounts: plan === "creator" && !dbUser.stripeCustomerId
+  ? [{ coupon: process.env.STRIPE_FIRST_MONTH_COUPON_ID! }]
+  : [],
   success_url: `${origin}/dashboard?upgraded=true`,
   cancel_url: `${origin}/dashboard?cancelled=true`,
   metadata: {
