@@ -248,13 +248,13 @@ setLoading(false);
             <h3 className="text-lg font-semibold">Creator</h3>
             <div className="mt-4 flex items-baseline gap-1">
   <span className="text-4xl font-bold">
-    {isFirstSub ? "4.99€" : "14.99€"}
-  </span>
+  {isFirstSub ? "4.99€" : "9.99€"}
+</span>
   <span className="text-sm text-muted">/mois</span>
 </div>
 {isFirstSub && (
   <p className="mt-1 text-xs font-medium text-violet-400">
-    🎉 Premier mois à 4.99€, puis 14.99€/mois
+    🎉 Premier mois à 4.99€, puis 9.99€/mois
   </p>
 )}
 <p className="mt-1 text-sm text-muted">20 crédits/mois</p>
@@ -287,7 +287,7 @@ setLoading(false);
             </span>
             <h3 className="text-lg font-semibold">Pro</h3>
             <div className="mt-4 flex items-baseline gap-1">
-              <span className="text-4xl font-bold">34.99€</span>
+              <span className="text-4xl font-bold">24.99€</span>
               <span className="text-sm text-muted">/mois</span>
             </div>
             <p className="mt-1 text-sm text-muted">50 crédits/mois</p>
