@@ -494,13 +494,26 @@ export default function DashboardPage() {
           {quota?.plan === "CREATOR" && <CreatorUpgradeBanner />}
           {quota?.plan === "FREE" && <FreePlanBanner />}
           {quota && <CreditsBar quota={quota} />}
-          {quota?.plan !== "FREE" && quota?.plan !== "CREATOR" && (
-            <div className="flex justify-end">
-              <Link href="/dashboard/pricing" className="btn-animated shrink-0 rounded-lg gradient-premium px-5 py-2 text-sm font-semibold text-white text-center">
-                Upgrader
-              </Link>
-            </div>
-          )}
+          {quota?.plan === "PRO" && (
+  <div className="flex justify-end">
+    <button
+      type="button"
+      onClick={async () => {
+        const { data: { session } } = await getSupabase().auth.getSession();
+        if (!session) return;
+        const res = await fetch("/api/stripe/portal", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const data = await res.json();
+        if (data.url) window.location.href = data.url;
+      }}
+      className="btn-animated rounded-lg border border-border px-5 py-2 text-sm font-semibold text-muted hover:border-accent-light"
+    >
+      Gérer mon abonnement
+    </button>
+  </div>
+)}
         </section>
 
         {loading ? (
