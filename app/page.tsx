@@ -247,7 +247,7 @@ des vidéos à 10x ma taille d'audience..."`}
                 ⭐ Populaire
               </span>
               <h3 className="text-lg font-semibold">Creator</h3>
-              <p className="mt-2 text-3xl font-bold">14.99€</p>
+              <p className="mt-2 text-3xl font-bold">9.99€</p>
               <p className="mt-1 text-sm text-muted">20 crédits / mois</p>
               <ul className="mt-6 space-y-2 text-sm text-muted">
                 <li>• Toutes plateformes</li>
@@ -264,7 +264,7 @@ des vidéos à 10x ma taille d'audience..."`}
             </div>
             <div className="pricing-card rounded-2xl border border-border bg-surface p-6">
               <h3 className="text-lg font-semibold">Pro</h3>
-              <p className="mt-2 text-3xl font-bold">34.99€</p>
+              <p className="mt-2 text-3xl font-bold">24.99€</p>
               <p className="mt-1 text-sm text-muted">50 crédits / mois</p>
               <ul className="mt-6 space-y-2 text-sm text-muted">
                 <li>• Tout Creator</li>
