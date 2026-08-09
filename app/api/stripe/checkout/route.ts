@@ -16,83 +16,86 @@ const PLAN_MAP: Record<string, Plan> = {
   pro: "PRO",
 };
 
+async function cancelExistingSubscriptions(customerId: string) {
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "active",
+  });
+  for (const sub of subscriptions.data) {
+    await stripe.subscriptions.cancel(sub.id);
+  }
+}
+
 export async function GET(request: NextRequest) {
   const plan = request.nextUrl.searchParams.get("plan");
-
   if (!plan || !PRICE_IDS[plan]) {
     return NextResponse.json({ error: "Plan invalide." }, { status: 400 });
   }
 
   const supabaseUser = await getAuthUser(request);
-  if (!supabaseUser) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
+  if (!supabaseUser) return NextResponse.redirect(new URL("/login", request.url));
 
   const dbUser = await getOrCreateDbUser(supabaseUser);
-  if (!dbUser) {
-    return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
+  if (!dbUser) return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
+
+  if (dbUser.stripeCustomerId) {
+    await cancelExistingSubscriptions(dbUser.stripeCustomerId);
   }
 
   const origin = request.nextUrl.origin;
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    customer: dbUser.stripeCustomerId ?? undefined,
+    customer_email: dbUser.stripeCustomerId ? undefined : dbUser.email,
+    line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
+    discounts: plan === "creator" && !dbUser.stripeCustomerId
+      ? [{ coupon: process.env.STRIPE_FIRST_MONTH_COUPON_ID! }]
+      : [],
+    success_url: `${origin}/dashboard?upgraded=true`,
+    cancel_url: `${origin}/dashboard?cancelled=true`,
+    metadata: {
+      supabaseId: dbUser.supabaseId,
+      plan: PLAN_MAP[plan],
+    },
+  });
 
- const session = await stripe.checkout.sessions.create({
-  mode: "subscription",
-  customer: dbUser.stripeCustomerId ?? undefined,
-  customer_email: dbUser.stripeCustomerId ? undefined : dbUser.email,
-  line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
-discounts: plan === "creator" && !dbUser.stripeCustomerId
-  ? [{ coupon: process.env.STRIPE_FIRST_MONTH_COUPON_ID! }]
-  : [],
-  success_url: `${origin}/dashboard?upgraded=true`,
-  cancel_url: `${origin}/dashboard?cancelled=true`,
-  metadata: {
-    supabaseId: dbUser.supabaseId,
-    plan: PLAN_MAP[plan],
-  },
-});
-
-  if (!session.url) {
-    return NextResponse.json({ error: "Erreur Stripe." }, { status: 500 });
-  }
-
+  if (!session.url) return NextResponse.json({ error: "Erreur Stripe." }, { status: 500 });
   return NextResponse.redirect(session.url);
 }
 
 export async function POST(request: NextRequest) {
   try {
     const { plan } = await request.json();
-
     if (!plan || !PRICE_IDS[plan]) {
       return NextResponse.json({ error: "Plan invalide." }, { status: 400 });
     }
 
     const supabaseUser = await getAuthUser(request);
-    if (!supabaseUser) {
-      return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
-    }
+    if (!supabaseUser) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
 
     const dbUser = await getOrCreateDbUser(supabaseUser);
-    if (!dbUser) {
-      return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
+    if (!dbUser) return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
+
+    if (dbUser.stripeCustomerId) {
+      await cancelExistingSubscriptions(dbUser.stripeCustomerId);
     }
 
     const origin = request.headers.get("origin") ?? "http://localhost:3000";
-
-   const session = await stripe.checkout.sessions.create({
-  mode: "subscription",
-  customer: dbUser.stripeCustomerId ?? undefined,
-  customer_email: dbUser.stripeCustomerId ? undefined : dbUser.email,
- line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
-discounts: plan === "creator" && !dbUser.stripeCustomerId
-  ? [{ coupon: process.env.STRIPE_FIRST_MONTH_COUPON_ID! }]
-  : [],
-  success_url: `${origin}/dashboard?upgraded=true`,
-  cancel_url: `${origin}/dashboard?cancelled=true`,
-  metadata: {
-    supabaseId: dbUser.supabaseId,
-    plan: PLAN_MAP[plan],
-  },
-});
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: dbUser.stripeCustomerId ?? undefined,
+      customer_email: dbUser.stripeCustomerId ? undefined : dbUser.email,
+      line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
+      discounts: plan === "creator" && !dbUser.stripeCustomerId
+        ? [{ coupon: process.env.STRIPE_FIRST_MONTH_COUPON_ID! }]
+        : [],
+      success_url: `${origin}/dashboard?upgraded=true`,
+      cancel_url: `${origin}/dashboard?cancelled=true`,
+      metadata: {
+        supabaseId: dbUser.supabaseId,
+        plan: PLAN_MAP[plan],
+      },
+    });
 
     return NextResponse.json({ url: session.url });
 
