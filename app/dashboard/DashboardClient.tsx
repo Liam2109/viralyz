@@ -517,7 +517,7 @@ export default function DashboardPage() {
         </section>
 
         {loading ? (
-          <AnalysisLoadingPanel />
+  <AnalysisLoadingPanel platform={detectedPlatform} />
         ) : (
           <form onSubmit={handleAnalyze} className="space-y-6">
             <section className="rounded-2xl border border-border bg-surface p-4 space-y-4 sm:p-6">

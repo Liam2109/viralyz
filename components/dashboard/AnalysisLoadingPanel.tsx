@@ -1,9 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { PlatformKey } from "@/lib/platforms";
 
-const MESSAGES = [
+const MESSAGES_YOUTUBE = [
   "🔍 Récupération des données YouTube...",
+  "🪝 Analyse du hook...",
+  "📊 Détection des techniques virales...",
+  "🎯 Calcul du score viral...",
+  "✍️ Génération du script...",
+  "✨ Finalisation de l'analyse...",
+] as const;
+
+const MESSAGES_TIKTOK = [
+  "🔍 Récupération des données TikTok...",
+  "🪝 Analyse du hook...",
+  "📊 Détection des techniques virales...",
+  "🎯 Calcul du score viral...",
+  "✍️ Génération du script...",
+  "✨ Finalisation de l'analyse...",
+] as const;
+
+const MESSAGES_INSTAGRAM = [
+  "🔍 Récupération des données Instagram...",
   "🪝 Analyse du hook...",
   "📊 Détection des techniques virales...",
   "🎯 Calcul du score viral...",
@@ -13,16 +32,24 @@ const MESSAGES = [
 
 const DURATION_MS = 45_000;
 
-export default function AnalysisLoadingPanel() {
+function getMessages(platform: PlatformKey) {
+  if (platform === "tiktok") return MESSAGES_TIKTOK;
+  if (platform === "instagram") return MESSAGES_INSTAGRAM;
+  return MESSAGES_YOUTUBE;
+}
+
+export default function AnalysisLoadingPanel({ platform }: { platform?: PlatformKey }) {
   const [messageIndex, setMessageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+  const messages = getMessages(platform ?? "youtube");
 
   useEffect(() => {
+    setMessageIndex(0);
     const msgInterval = setInterval(() => {
-      setMessageIndex((i) => (i + 1) % MESSAGES.length);
+      setMessageIndex((i) => (i + 1) % messages.length);
     }, 2000);
     return () => clearInterval(msgInterval);
-  }, []);
+  }, [platform, messages.length]);
 
   useEffect(() => {
     const start = performance.now();
@@ -46,7 +73,7 @@ export default function AnalysisLoadingPanel() {
           aria-label="Analyse en cours"
         />
         <p className="mt-6 min-h-[1.5rem] text-sm font-medium text-foreground sm:text-base">
-          {MESSAGES[messageIndex]}
+          {messages[messageIndex]}
         </p>
         <div className="mt-8 w-full max-w-md">
           <div className="flex justify-between text-xs text-muted">
