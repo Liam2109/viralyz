@@ -160,7 +160,7 @@ function FreePlanBanner() {
 function CreatorUpgradeBanner() {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm text-muted">Passez au Pro — 50 analyses — 34.99€/mois</p>
+      <p className="text-sm text-muted">Passez au Pro — 50 analyses — 24.99€/mois</p>
       <Link href="/dashboard/pricing" className="btn-animated w-full rounded-lg border border-accent/50 bg-accent/10 px-4 py-2 text-center text-sm font-semibold text-accent-light sm:w-auto">
         Voir Pro
       </Link>
@@ -534,12 +534,12 @@ export default function DashboardPage() {
                   <p className="mt-1.5 text-xs text-muted">Plateforme détectée : {PLATFORM_LABELS[detectedPlatform]}{detectedPlatform === "youtube" && " — analyse automatique"}</p>
                 )}
               </div>
-              {showNonYouTubeMessage && (
-                <>
-                  <div className="rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm">TikTok, Instagram et X arrivent bientôt. En attendant, collez votre transcription ci-dessous.</div>
-                  <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} placeholder="Collez votre transcription ici..." rows={5} className={`resize-none ${inputClass}`} />
-                </>
-              )}
+              {detectedPlatform === "x" && (
+  <>
+    <div className="rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm">X (Twitter) arrive bientôt. En attendant, collez votre transcription ci-dessous.</div>
+    <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} placeholder="Collez votre transcription ici..." rows={5} className={`resize-none ${inputClass}`} />
+  </>
+)}
               <AccordionItem title="✨ Style personnel (optionnel)" defaultOpen={false}>
                 <textarea value={personalStyle} onChange={(e) => setPersonalStyle(e.target.value)} placeholder="Collez 3 exemples de vos anciens scripts pour que l'IA imite votre style..." rows={5} className={`w-full resize-none ${inputClass}`} />
               </AccordionItem>
