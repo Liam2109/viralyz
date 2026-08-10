@@ -2,6 +2,7 @@ export type OutputFormat = "Court" | "Moyen" | "Long";
 
 // ==================== PROMPT FREE ====================
 export const PROMPT_ANALYZE = `
+RÈGLE ABSOLUE N°1 : Réponds TOUJOURS en français. Peu importe la langue de la vidéo. Tout le JSON, tous les textes, tous les rapports sont en français. C'est non négociable.
 Tu es un expert en marketing viral.
 Analyse ce contenu vidéo et retourne UNIQUEMENT un JSON valide :
 {
@@ -25,6 +26,7 @@ Sois honnête — ne gonfle pas les scores.
 
 // ==================== PROMPT CREATOR ====================
 export const PROMPT_ANALYZE_CREATOR = `
+RÈGLE ABSOLUE N°1 : Réponds TOUJOURS en français. Peu importe la langue de la vidéo. Tout le JSON, tous les textes, tous les rapports sont en français. C'est non négociable.
 Tu es un expert mondial en création de contenu viral et psychologie des réseaux sociaux.
 Analyse ce contenu vidéo et retourne UNIQUEMENT un JSON valide :
 {
@@ -56,6 +58,7 @@ Sois brutalement honnête — 85+ signifie vraiment exceptionnel.
 
 // ==================== PROMPT PRO ====================
 export const PROMPT_ANALYZE_PRO = `
+RÈGLE ABSOLUE N°1 : Réponds TOUJOURS en français. Peu importe la langue de la vidéo. Tout le JSON, tous les textes, tous les rapports sont en français. C'est non négociable.
 Tu es le meilleur analyste de contenu viral au monde.
 Analyse ce contenu vidéo avec une précision chirurgicale et retourne UNIQUEMENT un JSON valide :
 {
@@ -132,7 +135,7 @@ Analyse :
 ${analysisContext}
 
 RÈGLES :
-1. RÈGLE ABSOLUE : Si la vidéo est en français, génère le script UNIQUEMENT en français. Si la vidéo est en anglais, génère en anglais. Détecte la langue depuis le titre et le contenu et respecte-la impérativement.
+1. RÈGLE ABSOLUE : Génère TOUJOURS en français. Peu importe la langue de la vidéo. Même si tout est en anglais. Le script est EN FRANÇAIS. Point final.
 2. Identifie les grandes parties naturelles de la vidéo et structure le script en conséquence
 3. Hook fort qui arrête le scroll
 4. CTA naturel à la fin
@@ -168,7 +171,7 @@ Analyse complète :
 ${analysisContext}
 
 RÈGLES :
-1. RÈGLE ABSOLUE : Si la vidéo est en français, génère le script UNIQUEMENT en français. Si la vidéo est en anglais, génère en anglais. Détecte la langue depuis le titre et le contenu et respecte-la impérativement.
+1. RÈGLE ABSOLUE : Génère TOUJOURS en français. Peu importe la langue de la vidéo. Même si tout est en anglais. Le script est EN FRANÇAIS. Point final.
 2. Identifie les grandes parties naturelles de la vidéo et structure le script selon ces parties
 3. Hook IRRÉSISTIBLE qui arrête le scroll
 4. Si style personnel fourni, imite fidèlement les expressions et le rythme
@@ -205,7 +208,7 @@ Analyse ultra-détaillée :
 ${analysisContext}
 
 RÈGLES ABSOLUES :
-1. RÈGLE ABSOLUE : Si la vidéo est en français, génère le script UNIQUEMENT en français. Si la vidéo est en anglais, génère en anglais. Détecte la langue depuis le titre et le contenu et respecte-la impérativement.
+1. RÈGLE ABSOLUE : Génère TOUJOURS en français. Peu importe la langue de la vidéo. Même si tout est en anglais. Le script est EN FRANÇAIS. Point final.
 2. Identifie les grandes parties naturelles de la vidéo selon son format et sa structure
 3. Hook qui arrête le scroll en moins de 2 secondes
 4. Notes de réalisation pour chaque partie (ton de voix, rythme, énergie)
