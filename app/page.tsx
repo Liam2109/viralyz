@@ -11,7 +11,7 @@ const faqItems = [
   },
   {
     q: "Quelles plateformes sont supportées ?",
-    a: "YouTube est disponible dès maintenant. TikTok et Instagram arrivent en août 2025.",
+    a: "YouTube, TikTok et Instagram sont supportés. Collez simplement l'URL de votre vidéo.",
   },
   {
     q: "Puis-je personnaliser le script ?",
@@ -97,8 +97,7 @@ export default function Home() {
             <span className="gradient-premium-text">Créez le script qui reproduit le résultat.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base text-muted sm:text-lg">
-            Collez l&apos;URL d&apos;une vidéo YouTube. Viralyz analyse les mécanismes viraux et génère
-            votre script en 30 secondes.
+            Collez l&apos;URL d&apos;une vidéo YouTube, TikTok ou Instagram. Viralyz analyse les mécanismes viraux et génère votre script en 30 secondes.
           </p>
           <form onSubmit={handleHeroAnalyze} className="mx-auto mt-10 max-w-2xl">
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -118,14 +117,10 @@ export default function Home() {
             </div>
           </form>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm">
-            <span className="rounded-full border border-border bg-surface px-3 py-1">YouTube ✅ Supporté</span>
-            <span className="rounded-full border border-border bg-surface/60 px-3 py-1 text-muted">
-              TikTok 🔜 Bientôt
-            </span>
-            <span className="rounded-full border border-border bg-surface/60 px-3 py-1 text-muted">
-              Instagram 🔜 Bientôt
-            </span>
-          </div>
+  <span className="rounded-full border border-border bg-surface px-3 py-1">YouTube ✅</span>
+  <span className="rounded-full border border-border bg-surface px-3 py-1">TikTok ✅</span>
+  <span className="rounded-full border border-border bg-surface px-3 py-1">Instagram ✅</span>
+</div>
           <p className="mt-4 text-xs text-muted">2 analyses gratuites — sans carte bancaire</p>
           <div className="mt-10 grid gap-4 text-sm text-muted sm:grid-cols-3 sm:gap-6">
             <div>
@@ -265,7 +260,7 @@ des vidéos à 10x ma taille d'audience..."`}
             <div className="pricing-card rounded-2xl border border-border bg-surface p-6">
               <h3 className="text-lg font-semibold">Pro</h3>
               <p className="mt-2 text-3xl font-bold">24.99€</p>
-              <p className="mt-1 text-sm text-muted">50 crédits / mois</p>
+              <p className="mt-1 text-sm text-muted">infini crédits / mois</p>
               <ul className="mt-6 space-y-2 text-sm text-muted">
                 <li>• Tout Creator</li>
                 <li>• Support prioritaire</li>
