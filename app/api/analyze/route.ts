@@ -3,7 +3,8 @@ import { openai } from "@/lib/openai";
 import { PROMPT_ANALYZE, PROMPT_ANALYZE_CREATOR, PROMPT_ANALYZE_PRO, buildPromptScript, buildPromptScriptCreator, buildPromptScriptPro, PROMPT_SIMILARITY, type OutputFormat } from "@/lib/prompts";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser, getOrCreateDbUser, getQuotaInfo, fetchYouTubeData, PLAN_LIMITS, getMonthlyUsage, CREDITS_EXHAUSTED_MESSAGE } from "@/lib/auth";
-import { isNonYouTubeUrl } from "@/lib/platforms";
+import { isNonYouTubeUrl, detectPlatformFromUrl } from "@/lib/platforms";
+import { fetchTikTokData, fetchInstagramData } from "@/lib/apify";
 
 interface AnalyzeBody {
   videoUrl: string;
@@ -101,13 +102,15 @@ if (!userAgent || userAgent.length < 10) {
 
     if (!videoUrl) return NextResponse.json({ error: "URL vidéo requise." }, { status: 400 });
 
-    if (isNonYouTubeUrl(videoUrl) && !transcript?.trim()) {
-      return NextResponse.json({ error: "TikTok, Instagram et X arrivent bientôt. En attendant, collez votre transcription ci-dessous." }, { status: 400 });
-    }
+   const detectedPlatform = detectPlatformFromUrl(videoUrl);
 
-    if (isNonYouTubeUrl(videoUrl) && dbUser.plan === "FREE") {
-      return NextResponse.json({ error: "Les vidéos non-YouTube nécessitent le plan Creator." }, { status: 403 });
-    }
+if (detectedPlatform === "x" && !transcript?.trim()) {
+  return NextResponse.json({ error: "X (Twitter) arrive bientôt. Collez votre transcription ci-dessous." }, { status: 400 });
+}
+
+if (isNonYouTubeUrl(videoUrl) && dbUser.plan === "FREE") {
+  return NextResponse.json({ error: "TikTok et Instagram nécessitent le plan Creator ou Pro." }, { status: 403 });
+}
 
     if (dbUser.plan === "FREE" && outputFormat !== "Court") {
       return NextResponse.json({ error: "Format moyen et long disponibles dès le plan Creator" }, { status: 403 });
@@ -129,18 +132,40 @@ if (!userAgent || userAgent.length < 10) {
     let videoDuration: string | null = null;
     let videoChannel: string | null = null;
 
-    if (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) {
-      youtubeData = await fetchYouTubeData(videoUrl);
-      if (youtubeData) {
-        videoTitle = youtubeData.title;
-        videoThumbnail = youtubeData.thumbnail;
-        videoViews = youtubeData.views;
-        videoLikes = youtubeData.likes;
-        videoComments = youtubeData.comments;
-        videoDuration = youtubeData.duration;
-        videoChannel = youtubeData.channelName;
-      }
-    }
+  if (detectedPlatform === "youtube") {
+  youtubeData = await fetchYouTubeData(videoUrl);
+  if (youtubeData) {
+    videoTitle = youtubeData.title;
+    videoThumbnail = youtubeData.thumbnail;
+    videoViews = youtubeData.views;
+    videoLikes = youtubeData.likes;
+    videoComments = youtubeData.comments;
+    videoDuration = youtubeData.duration;
+    videoChannel = youtubeData.channelName;
+  }
+} else if (detectedPlatform === "tiktok") {
+  const tiktokData = await fetchTikTokData(videoUrl);
+  if (tiktokData) {
+    videoTitle = tiktokData.title;
+    videoThumbnail = tiktokData.thumbnail;
+    videoViews = tiktokData.views;
+    videoLikes = tiktokData.likes;
+    videoComments = tiktokData.comments;
+    videoDuration = tiktokData.duration;
+    videoChannel = tiktokData.channel;
+  }
+} else if (detectedPlatform === "instagram") {
+  const instaData = await fetchInstagramData(videoUrl);
+  if (instaData) {
+    videoTitle = instaData.title;
+    videoThumbnail = instaData.thumbnail;
+    videoViews = instaData.views;
+    videoLikes = instaData.likes;
+    videoComments = instaData.comments;
+    videoDuration = instaData.duration;
+    videoChannel = instaData.channel;
+  }
+}
 
     // Contexte enrichi pour l'analyse
     const metricsContext = youtubeData ? `
