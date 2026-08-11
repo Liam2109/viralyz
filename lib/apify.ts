@@ -31,7 +31,7 @@ export async function fetchTikTokData(url: string): Promise<ApifyVideoData | nul
       resultsPerPage: 1,
     }) as Record<string, unknown> | null;
 
-    console.log("APIFY TIKTOK RAW:", JSON.stringify(raw, null, 2));
+    console.log("APIFY TIKTOK KEYS:", Object.keys(raw ?? {}));
 
     if (!raw) return null;
 
