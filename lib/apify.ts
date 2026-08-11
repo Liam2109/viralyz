@@ -27,11 +27,11 @@ async function runApifyActor(actorId: string, input: object): Promise<unknown> {
 export async function fetchTikTokData(url: string): Promise<ApifyVideoData | null> {
   try {
     const raw = await runApifyActor("clockworks~tiktok-scraper", {
-  postURLs: [url],
-  resultsPerPage: 1,
-}) as Record<string, unknown> | null;
+      postURLs: [url],
+      resultsPerPage: 1,
+    }) as Record<string, unknown> | null;
 
-console.log("APIFY TIKTOK RAW:", JSON.stringify(raw, null, 2));
+    console.log("APIFY TIKTOK RAW:", JSON.stringify(raw, null, 2));
 
     if (!raw) return null;
 
