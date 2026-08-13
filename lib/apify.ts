@@ -11,32 +11,59 @@ export interface ApifyVideoData {
 
 async function runApifyActor(actorId: string, input: object): Promise<unknown> {
   const token = process.env.APIFY_API_TOKEN!;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
 
-  try {
-    const res = await fetch(
-      `https://api.apify.com/v2/acts/${actorId}/run-sync-get-dataset-items?token=${token}&timeout=25`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-        signal: controller.signal,
-      }
-    );
-    clearTimeout(timeout);
-    if (!res.ok) {
-      console.error("APIFY ERROR STATUS:", res.status, await res.text());
-      return null;
+  const runRes = await fetch(
+    `https://api.apify.com/v2/acts/${actorId}/runs?token=${token}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
     }
-    const data = await res.json();
-    console.log("APIFY TIKTOK KEYS:", Object.keys(Array.isArray(data) ? (data[0] ?? {}) : {}));
-    return Array.isArray(data) ? data[0] : null;
-  } catch (err) {
-    clearTimeout(timeout);
-    console.error("APIFY FETCH ERROR:", err);
+  );
+
+  if (!runRes.ok) {
+    console.error("APIFY RUN ERROR:", runRes.status, await runRes.text());
     return null;
   }
+
+  const runData = await runRes.json() as { data?: { id?: string } };
+  const runId = runData?.data?.id;
+
+  if (!runId) {
+    console.error("APIFY NO RUN ID");
+    return null;
+  }
+
+  console.log("APIFY RUN ID:", runId);
+
+  for (let i = 0; i < 10; i++) {
+    await new Promise(r => setTimeout(r, 2500));
+
+    const statusRes = await fetch(
+      `https://api.apify.com/v2/actor-runs/${runId}?token=${token}`
+    );
+    const statusData = await statusRes.json() as { data?: { status?: string } };
+    const status = statusData?.data?.status;
+
+    console.log("APIFY STATUS:", status);
+
+    if (status === "SUCCEEDED") {
+      const itemsRes = await fetch(
+        `https://api.apify.com/v2/actor-runs/${runId}/dataset/items?token=${token}`
+      );
+      const items = await itemsRes.json();
+      console.log("APIFY TIKTOK KEYS:", Object.keys(Array.isArray(items) ? (items[0] ?? {}) : {}));
+      return Array.isArray(items) ? items[0] : null;
+    }
+
+    if (status === "FAILED" || status === "ABORTED") {
+      console.error("APIFY RUN FAILED:", status);
+      return null;
+    }
+  }
+
+  console.error("APIFY TIMEOUT");
+  return null;
 }
 
 export async function fetchTikTokData(url: string): Promise<ApifyVideoData | null> {
