@@ -80,18 +80,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting basique par IP
-const ip = request.headers.get("x-forwarded-for") ?? "unknown";
-const rateLimitKey = `ratelimit:${ip}`;
+    const userAgent = request.headers.get("user-agent") ?? "";
+    if (!userAgent || userAgent.length < 10) {
+      return NextResponse.json({ error: "Requête non autorisée." }, { status: 403 });
+    }
 
-// On stocke dans les headers de la requête pour tracking
-const userAgent = request.headers.get("user-agent") ?? "";
-if (!userAgent || userAgent.length < 10) {
-  return NextResponse.json(
-    { error: "Requête non autorisée." },
-    { status: 403 }
-  );
-}
     const supabaseUser = await getAuthUser(request);
     if (!supabaseUser) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
     const dbUser = await getOrCreateDbUser(supabaseUser);
@@ -102,15 +95,16 @@ if (!userAgent || userAgent.length < 10) {
 
     if (!videoUrl) return NextResponse.json({ error: "URL vidéo requise." }, { status: 400 });
 
-   const detectedPlatform = detectPlatformFromUrl(videoUrl);
+    const detectedPlatform = detectPlatformFromUrl(videoUrl);
+    console.log("DETECTED PLATFORM:", detectedPlatform, "URL:", videoUrl);
 
-if (detectedPlatform === "x" && !transcript?.trim()) {
-  return NextResponse.json({ error: "X (Twitter) arrive bientôt. Collez votre transcription ci-dessous." }, { status: 400 });
-}
+    if (detectedPlatform === "x" && !transcript?.trim()) {
+      return NextResponse.json({ error: "X (Twitter) arrive bientôt. Collez votre transcription ci-dessous." }, { status: 400 });
+    }
 
-if (isNonYouTubeUrl(videoUrl) && dbUser.plan === "FREE") {
-  return NextResponse.json({ error: "TikTok et Instagram nécessitent le plan Creator ou Pro." }, { status: 403 });
-}
+    if (isNonYouTubeUrl(videoUrl) && dbUser.plan === "FREE") {
+      return NextResponse.json({ error: "TikTok et Instagram nécessitent le plan Creator ou Pro." }, { status: 403 });
+    }
 
     if (dbUser.plan === "FREE" && outputFormat !== "Court") {
       return NextResponse.json({ error: "Format moyen et long disponibles dès le plan Creator" }, { status: 403 });
@@ -122,8 +116,6 @@ if (isNonYouTubeUrl(videoUrl) && dbUser.plan === "FREE") {
       if (used >= limit) return NextResponse.json({ error: CREDITS_EXHAUSTED_MESSAGE }, { status: 403 });
     }
 
-    // Récupération des données YouTube complètes
-    let youtubeData = null;
     let videoTitle: string | null = null;
     let videoThumbnail: string | null = null;
     let videoViews: number | null = null;
@@ -132,43 +124,46 @@ if (isNonYouTubeUrl(videoUrl) && dbUser.plan === "FREE") {
     let videoDuration: string | null = null;
     let videoChannel: string | null = null;
 
-  if (detectedPlatform === "youtube") {
-  youtubeData = await fetchYouTubeData(videoUrl);
-  if (youtubeData) {
-    videoTitle = youtubeData.title;
-    videoThumbnail = youtubeData.thumbnail;
-    videoViews = youtubeData.views;
-    videoLikes = youtubeData.likes;
-    videoComments = youtubeData.comments;
-    videoDuration = youtubeData.duration;
-    videoChannel = youtubeData.channelName;
-  }
-} else if (detectedPlatform === "tiktok") {
-  const tiktokData = await fetchTikTokData(videoUrl);
-  if (tiktokData) {
-    videoTitle = tiktokData.title;
-    videoThumbnail = tiktokData.thumbnail;
-    videoViews = tiktokData.views;
-    videoLikes = tiktokData.likes;
-    videoComments = tiktokData.comments;
-    videoDuration = tiktokData.duration;
-    videoChannel = tiktokData.channel;
-  }
-} else if (detectedPlatform === "instagram") {
-  const instaData = await fetchInstagramData(videoUrl);
-  if (instaData) {
-    videoTitle = instaData.title;
-    videoThumbnail = instaData.thumbnail;
-    videoViews = instaData.views;
-    videoLikes = instaData.likes;
-    videoComments = instaData.comments;
-    videoDuration = instaData.duration;
-    videoChannel = instaData.channel;
-  }
-}
+    if (detectedPlatform === "youtube") {
+      const youtubeData = await fetchYouTubeData(videoUrl);
+      if (youtubeData) {
+        videoTitle = youtubeData.title;
+        videoThumbnail = youtubeData.thumbnail;
+        videoViews = youtubeData.views;
+        videoLikes = youtubeData.likes;
+        videoComments = youtubeData.comments;
+        videoDuration = youtubeData.duration;
+        videoChannel = youtubeData.channelName;
+      }
+    } else if (detectedPlatform === "tiktok") {
+      console.log("FETCHING TIKTOK DATA...");
+      const tiktokData = await fetchTikTokData(videoUrl);
+      console.log("TIKTOK DATA RESULT:", JSON.stringify(tiktokData));
+      if (tiktokData) {
+        videoTitle = tiktokData.title;
+        videoThumbnail = tiktokData.thumbnail;
+        videoViews = tiktokData.views;
+        videoLikes = tiktokData.likes;
+        videoComments = tiktokData.comments;
+        videoDuration = tiktokData.duration;
+        videoChannel = tiktokData.channel;
+      }
+    } else if (detectedPlatform === "instagram") {
+      console.log("FETCHING INSTAGRAM DATA...");
+      const instaData = await fetchInstagramData(videoUrl);
+      console.log("INSTAGRAM DATA RESULT:", JSON.stringify(instaData));
+      if (instaData) {
+        videoTitle = instaData.title;
+        videoThumbnail = instaData.thumbnail;
+        videoViews = instaData.views;
+        videoLikes = instaData.likes;
+        videoComments = instaData.comments;
+        videoDuration = instaData.duration;
+        videoChannel = instaData.channel;
+      }
+    }
 
-    // Contexte enrichi pour l'analyse
-    const metricsContext = youtubeData ? `
+    const metricsContext = (videoViews || videoLikes || videoChannel) ? `
 Métriques réelles de la vidéo :
 - Vues : ${videoViews?.toLocaleString("fr-FR") ?? "N/A"}
 - Likes : ${videoLikes?.toLocaleString("fr-FR") ?? "N/A"}
@@ -182,7 +177,6 @@ Métriques réelles de la vidéo :
       ? `Transcript:\n${transcript}\n\nTitre: ${videoTitle ?? "Inconnu"}\n${metricsContext}`
       : `URL vidéo: ${videoUrl}\nTitre: ${videoTitle ?? "Inconnu"}\n${metricsContext}\nAnalyse la structure typique d'une vidéo virale de ce type.`;
 
-    // Choisir le prompt selon le plan
     const analyzePrompt = dbUser.plan === "PRO"
       ? PROMPT_ANALYZE_PRO
       : dbUser.plan === "CREATOR"
@@ -206,7 +200,6 @@ Métriques réelles de la vidéo :
     try { analysis = JSON.parse(analyzeRaw); }
     catch { return NextResponse.json({ error: "Réponse IA invalide." }, { status: 500 }); }
 
-    // Choisir le prompt de script selon le plan
     const scriptBuilderFn = dbUser.plan === "PRO"
       ? buildPromptScriptPro
       : dbUser.plan === "CREATOR"
@@ -252,7 +245,6 @@ Métriques réelles de la vidéo :
       detectedNiche: analysis.detectedNiche,
       detectedTone: analysis.detectedTone,
       detectedFormat: analysis.detectedFormat,
-      // Données YouTube
       thumbnail: videoThumbnail,
       views: videoViews,
       likes: videoLikes,
